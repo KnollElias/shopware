@@ -54,8 +54,37 @@ class CheapestPriceUpdater
 
         $variantIdsUpdated = [];
 
+        $variantAccessor = $this->connection->fetchAllKeyValue(
+            'SELECT id, cheapest_price_accessor FROM product WHERE parent_id IN (:ids) AND version_id = :version',
+            ['ids' => Uuid::fromHexToBytesList($parentIds), 'version' => $versionId],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        $parentAccessors = $this->connection->fetchAllKeyValue(
+            'SELECT id, cheapest_price_accessor FROM product WHERE id IN (:ids) AND version_id = :version',
+            ['ids' => Uuid::fromHexToBytesList($parentIds), 'version' => $versionId],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
+        $existingContainers = $this->connection->fetchAllKeyValue(
+            'SELECT id, cheapest_price FROM product WHERE id IN (:ids) AND version_id = :version AND cheapest_price IS NOT NULL',
+            ['ids' => Uuid::fromHexToBytesList($parentIds), 'version' => $versionId],
+            ['ids' => ArrayParameterType::BINARY]
+        );
+
         foreach ($all as $productId => $prices) {
             $container = new CheapestPriceContainer($prices);
+            $existingContainer = $existingContainers[Uuid::fromHexToBytes($productId)] ?? null;
+            $parentAccessor = Json::encode($this->buildAccessor($container, $productId));
+
+            if ($existingContainer) {
+                $existingContainer = unserialize($existingContainer);
+
+                // nothing has changed for this product cheapest price
+                if ($existingContainer instanceof CheapestPriceContainer && $existingContainer->getHashed() === $container->getHashed()) {
+                    continue;
+                }
+            }
 
             $cheapestPrice->execute([
                 'price' => serialize($container),
@@ -69,15 +98,14 @@ class CheapestPriceUpdater
                 continue;
             }
 
-            $existingAccessors = $this->connection->fetchAllKeyValue(
-                'SELECT id, cheapest_price_accessor FROM product WHERE parent_id = :id AND version_id = :version',
-                ['id' => Uuid::fromHexToBytes($productId), 'version' => $versionId]
-            );
+            foreach ($variantIds as $variantId) {
+                $accessor = $variantId === $productId ? $parentAccessor : Json::encode($this->buildAccessor($container, $variantId));
 
-            foreach ($container->getVariantIds() as $variantId) {
-                $accessor = Json::encode($this->buildAccessor($container, $variantId));
+                if (($variantAccessor[Uuid::fromHexToBytes($variantId)] ?? null) === $accessor) {
+                    continue;
+                }
 
-                if (($existingAccessors[Uuid::fromHexToBytes($variantId)] ?? null) === $accessor) {
+                if (($parentAccessors[Uuid::fromHexToBytes($variantId)] ?? null) === $accessor) {
                     continue;
                 }
 

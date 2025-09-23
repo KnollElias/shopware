@@ -9,6 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Struct\Struct;
+use Shopware\Core\Framework\Util\Json;
 
 #[Package('framework')]
 class CheapestPriceContainer extends Struct
@@ -28,11 +29,15 @@ class CheapestPriceContainer extends Struct
      */
     private ?array $ruleIds = null;
 
+    private string $hashed = '';
+
     /**
      * @param array<mixed> $value
      */
     public function __construct(array $value)
     {
+        $this->hashed = md5(Json::encode($value));
+
         if (isset($value['default'])) {
             $this->default = $value['default'];
             unset($value['default']);
@@ -213,6 +218,11 @@ class CheapestPriceContainer extends Struct
         }
 
         return $this->ruleIds;
+    }
+
+    public function getHashed(): string
+    {
+        return $this->hashed;
     }
 
     /**
