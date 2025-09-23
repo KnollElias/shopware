@@ -302,11 +302,13 @@ class AdminSearchRegistry implements EventSubscriberInterface
             ];
         }
 
-        $this->connection->executeStatement(
-            'DELETE FROM admin_elasticsearch_index_task WHERE `entity` IN (:entities)',
-            ['entities' => $entities],
-            ['entities' => ArrayParameterType::STRING]
-        );
+        if (!empty($entities)) {
+            $this->connection->executeStatement(
+                'DELETE FROM admin_elasticsearch_index_task WHERE `entity` IN (:entities)',
+                ['entities' => $entities],
+                ['entities' => ArrayParameterType::STRING]
+            );
+        }
 
         foreach ($indexTasks as $task) {
             $this->connection->insert('admin_elasticsearch_index_task', $task);
@@ -341,11 +343,13 @@ class AdminSearchRegistry implements EventSubscriberInterface
             ];
         }
 
-        $this->connection->executeStatement(
-            'DELETE FROM admin_elasticsearch_index_task WHERE `entity` IN (:entities)',
-            ['entities' => $entities],
-            ['entities' => ArrayParameterType::STRING]
-        );
+        if (!empty($entities)) {
+            $this->connection->executeStatement(
+                'DELETE FROM admin_elasticsearch_index_task WHERE `entity` IN (:entities)',
+                ['entities' => $entities],
+                ['entities' => ArrayParameterType::STRING]
+            );
+        }
 
         foreach ($indexTasks as $task) {
             $this->connection->insert('admin_elasticsearch_index_task', $task);
