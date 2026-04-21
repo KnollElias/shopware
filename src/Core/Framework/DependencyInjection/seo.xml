@@ -136,6 +136,20 @@
             <argument type="service" id="sales_channel.repository"/>
         </service>
 
+        <service id="Shopware\Core\Content\Seo\SeoUrlTemplate\SeoUrlTemplateChangeSubscriber">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="messenger.default_bus"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Shopware\Core\Content\Seo\SeoUrlTemplate\SeoUrlTemplateIndexingHandler">
+            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlUpdater"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
+            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteRegistry"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
         <service id="Shopware\Core\Framework\Adapter\Twig\Extension\BuildBreadcrumbExtension">
             <argument type="service" id="Shopware\Core\Content\Category\Service\CategoryBreadcrumbBuilder"/>
             <argument type="service" id="sales_channel.category.repository"/>
