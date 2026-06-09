@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\Filte
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\CountAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\System\Country\CountryDefinition;
 
 /**
@@ -114,6 +115,26 @@ class MediaVisibilityRestrictionSubscriberTest extends TestCase
         static::assertCount(1, $event->getCriteria()->getFilters());
     }
 
+    public function testPrivateProductDownloadAndProductDocumentDefaultFoldersAreVisible(): void
+    {
+        $event = new EntitySearchedEvent(
+            new Criteria(),
+            new MediaDefinition(),
+            Context::createDefaultContext(new AdminApiSource(null))
+        );
+
+        $subscriber = new MediaVisibilityRestrictionSubscriber();
+        $subscriber->securePrivateFolders($event);
+
+        $filters = $event->getCriteria()->getFilters();
+        static::assertCount(1, $filters);
+
+        $allowedDefaultFolderEntities = $this->collectEqualsFilterValues($filters[0], 'mediaFolder.defaultFolder.entity');
+
+        static::assertContains('product_download', $allowedDefaultFolderEntities);
+        static::assertContains('product_document', $allowedDefaultFolderEntities);
+    }
+
     public function testSecurePrivateFoldersDifferentDefinitionDoesNotGetModified(): void
     {
         $event = new EntitySearchedEvent(
@@ -201,5 +222,26 @@ class MediaVisibilityRestrictionSubscriberTest extends TestCase
         $filterAggregation = $event->getCriteria()->getAggregation('test-filter');
         static::assertInstanceOf(FilterAggregation::class, $filterAggregation);
         static::assertCount(2, $filterAggregation->getFilter());
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    private function collectEqualsFilterValues(object $filter, string $field): array
+    {
+        if ($filter instanceof EqualsFilter && $filter->getField() === $field) {
+            return [$filter->getValue()];
+        }
+
+        if (!$filter instanceof MultiFilter) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($filter->getQueries() as $query) {
+            $values = array_merge($values, $this->collectEqualsFilterValues($query, $field));
+        }
+
+        return $values;
     }
 }
