@@ -47,6 +47,7 @@ class SeoResolver extends AbstractSeoResolver
 
         $query->setTitle('seo-url::resolve');
 
+        /** @var list<array{id: string, pathInfo: string, isCanonical: string|null, salesChannelId: string|null}> $seoPaths */
         $seoPaths = $query->executeQuery()->fetchAllAssociative();
 
         // sort seoPaths by filled salesChannelId and isCanonical, save file sort on SQL server
@@ -68,7 +69,7 @@ class SeoResolver extends AbstractSeoResolver
             return 0;
         });
 
-        $seoPath = $seoPaths[0] ?? ['pathInfo' => $seoPathInfo, 'isCanonical' => false];
+        $seoPath = $seoPaths[0] ?? ['pathInfo' => $seoPathInfo, 'isCanonical' => '0'];
 
         if (!$seoPath['isCanonical']) {
             $query = (new QueryBuilder($this->connection))

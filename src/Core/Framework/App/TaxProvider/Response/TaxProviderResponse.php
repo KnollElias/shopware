@@ -10,7 +10,7 @@ use Shopware\Core\Framework\Log\Package;
 /**
  * @internal only for use by the app-system
  *
- * @phpstan-type TaxResponse = array{ tax: float, taxRate: float, price: float }
+ * @phpstan-type TaxResponse = array{ tax: float, taxRate: float, price: float, label?: string }
  * @phpstan-type CalculatedTaxesCollectionResponse  array<string, TaxResponse[]>
  * @phpstan-type CartPriceTaxesResponse             array<TaxResponse>
  */

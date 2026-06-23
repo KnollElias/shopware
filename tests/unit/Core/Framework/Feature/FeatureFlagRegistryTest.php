@@ -550,7 +550,7 @@ class FeatureFlagRegistryTest extends TestCase
     }
 
     /**
-     * @return iterable<array-key, array{staticFeatureFlags: array<string, FeatureFlagConfig>, stored: array<string, FeatureFlagConfig>|string, expected: array<string, FeatureFlagConfig>}>
+     * @return iterable<array-key, array{enabled: bool, staticFeatureFlags: array<string, FeatureFlagConfig>, stored: array<string, FeatureFlagConfig>|string, expected: array<string, FeatureFlagConfig>}>
      */
     public static function registerDataProvider(): iterable
     {

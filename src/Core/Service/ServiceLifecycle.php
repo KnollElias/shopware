@@ -145,10 +145,7 @@ class ServiceLifecycle
             $this->appLifecycle->update(
                 $manifest,
                 new AppUpdateParameters(),
-                [
-                    'id' => $app->getId(),
-                    'roleId' => $app->getAclRoleId(),
-                ],
+                ['id' => $app->getId()],
                 $context
             );
             $this->logger->debug(\sprintf('Installed service "%s"', $serviceEntry->name));

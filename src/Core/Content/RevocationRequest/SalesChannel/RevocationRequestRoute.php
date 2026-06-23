@@ -134,23 +134,25 @@ class RevocationRequestRoute extends AbstractRevocationRequestRoute
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param array{receivers: array<string, string>, message?: string|null} $config
      *
-     * @return array{receivers: array<string>, message?: string|null}
+     * @return array{receivers: array<string, string>, message?: string|null}
      */
     private function createDefaultConfig(SalesChannelContext $context, array $config): array
     {
-        $config['receivers'][$this->systemConfigService->get('core.basicInformation.email', $context->getSalesChannelId())] = 'Admin';
+        $email = $this->systemConfigService->getString('core.basicInformation.email', $context->getSalesChannelId());
+        $config['receivers'][$email] = 'Admin';
 
         return $config;
     }
 
     /**
-     * @param array<string, mixed> $mailConfig
+     * @param array{receivers: array<string, string>, message?: string|null} $mailConfig
      * @param array<string, mixed> $slotConfig
      */
     private function addReceivers(array &$mailConfig, array $slotConfig): void
     {
+        /** @var array<string, string> $receivers */
         $receivers = $slotConfig['mailReceiver']['value'] ?? null;
 
         if (\is_array($receivers)) {

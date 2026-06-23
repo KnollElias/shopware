@@ -11,7 +11,6 @@ use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\Util\StatementHelper;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\Installer\Controller\ShopConfigurationController;
 use Shopware\Core\Maintenance\System\Service\ShopConfigurator;
 use Shopware\Tests\Integration\Core\Installer\Configuration\ShopConfigurationServiceTest;
 
@@ -22,7 +21,18 @@ use Shopware\Tests\Integration\Core\Installer\Configuration\ShopConfigurationSer
  *
  * @see ShopConfigurationServiceTest
  *
- * @phpstan-import-type Shop from ShopConfigurationController
+ * @phpstan-type Shop array{
+ *     name: string,
+ *     locale: string,
+ *     currency: string,
+ *     additionalCurrencies: null|list<string>,
+ *     country: string,
+ *     email: string,
+ *     host: string,
+ *     basePath: string,
+ *     schema: string,
+ *     blueGreenDeployment: bool
+ * }
  */
 #[Package('framework')]
 class ShopConfigurationService

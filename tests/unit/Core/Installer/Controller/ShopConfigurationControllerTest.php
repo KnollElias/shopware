@@ -238,7 +238,7 @@ class ShopConfigurationControllerTest extends TestCase
             'firstName' => 'first',
             'lastName' => 'last',
             'password' => 'shopware',
-            'locale' => 'de-DE',
+            'localeId' => 'de-DE',
         ];
         $this->adminConfigService->expects($this->once())->method('createAdmin')->with($expectedAdmin, $this->connection);
 

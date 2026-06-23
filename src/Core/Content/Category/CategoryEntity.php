@@ -363,7 +363,7 @@ class CategoryEntity extends Entity
     }
 
     /**
-     * @return array<mixed>|null
+     * @return array<string, mixed>|null
      */
     public function getSlotConfig(): ?array
     {
@@ -371,7 +371,7 @@ class CategoryEntity extends Entity
     }
 
     /**
-     * @param array<mixed> $slotConfig
+     * @param array<string, mixed> $slotConfig
      */
     public function setSlotConfig(array $slotConfig): void
     {

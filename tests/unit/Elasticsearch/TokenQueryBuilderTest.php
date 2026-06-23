@@ -910,7 +910,7 @@ class TokenQueryBuilderTest extends TestCase
     /**
      * @param array<mixed> $queries
      *
-     * @return array{dis_max: array{queries: array<mixed>}}
+     * @return array{dis_max: array{queries: array<mixed>, boost?: float, tie_breaker?: float}}
      */
     private static function disMax(array $queries, float|int|null $boost = null, ?float $tieBreaker = 0.2): array
     {

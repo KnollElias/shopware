@@ -224,7 +224,7 @@ class ServiceController
     }
 
     /**
-     * @return array<array{id: string, name: string, active: bool}>
+     * @return list<array{id: string, name: string, label: mixed, active: bool, icon: string|null, description: mixed, updated_at: string|null, version: string, requested_privileges: list<string>, privileges: list<string>|null, state: State, domains: list<string>|null}>
      */
     private function loadAllServices(Context $context): array
     {

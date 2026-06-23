@@ -31,7 +31,7 @@ class CacheAttributeTest extends TestCase
     }
 
     /**
-     * @return \Generator<string, CacheAttributeArray>
+     * @return \Generator<string, array{input: CacheAttributeArray, expectedMaxAge: ?int, expectedSMaxAge: ?int, expectedStates: array<string>|null}>
      */
     public static function fromArrayProvider(): \Generator
     {

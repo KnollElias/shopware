@@ -29,7 +29,7 @@ class EmptyPathInfoResolver extends AbstractSeoResolver
     {
         $seoPathInfo = ltrim($pathInfo, '/');
         if ($seoPathInfo === '') {
-            return ['pathInfo' => '/', 'isCanonical' => false];
+            return ['pathInfo' => '/', 'isCanonical' => '0'];
         }
 
         return $this->getDecorated()->resolve($languageId, $salesChannelId, $pathInfo);

@@ -117,7 +117,6 @@ final readonly class InvoiceDataProvider extends AbstractDocumentDataProvider
         }
 
         $customerType = $order->getOrderCustomer()?->getCustomer()?->getAccountType();
-
         if ($customerType !== CustomerEntity::ACCOUNT_TYPE_BUSINESS) {
             return false;
         }
@@ -144,7 +143,7 @@ final readonly class InvoiceDataProvider extends AbstractDocumentDataProvider
             return true;
         }
 
-        $vatIds = $order->getOrderCustomer()?->getVatIds();
+        $vatIds = $order->getOrderCustomer()->getVatIds();
 
         if (!\is_array($vatIds)) {
             return false;

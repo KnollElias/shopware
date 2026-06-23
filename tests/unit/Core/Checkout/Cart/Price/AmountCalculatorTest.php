@@ -142,7 +142,7 @@ class AmountCalculatorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{0: CartPrice, 1: PriceCollection}>
+     * @return iterable<string, array{0: CartPrice, 1: PriceCollection, 2: string}>
      */
     public static function calculateAmountWithNetPricesProvider(): iterable
     {
@@ -321,7 +321,7 @@ class AmountCalculatorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{0: CartPrice, 1: PriceCollection}>
+     * @return iterable<string, array{0: CartPrice, 1: PriceCollection, 2: string}>
      */
     public static function calculateAmountWithGrossPricesProvider(): iterable
     {

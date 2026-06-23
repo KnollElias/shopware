@@ -4,14 +4,13 @@ namespace Shopware\Core\Installer\Configuration;
 
 use Defuse\Crypto\Key;
 use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\Installer\Controller\ShopConfigurationController;
 use Shopware\Core\Installer\Finish\UniqueIdGenerator;
 use Shopware\Core\Maintenance\System\Struct\DatabaseConnectionInformation;
 
 /**
  * @internal
  *
- * @phpstan-import-type Shop from ShopConfigurationController
+ * @phpstan-import-type Shop from ShopConfigurationService
  */
 #[Package('framework')]
 class EnvConfigWriter

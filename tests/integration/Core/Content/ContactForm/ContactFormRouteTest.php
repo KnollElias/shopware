@@ -19,7 +19,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Test\Stub\Framework\IdsCollection;
 use Shopware\Core\Test\TestDefaults;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -47,14 +46,15 @@ class ContactFormRouteTest extends TestCase
 
     public function testContactFormSendMail(): void
     {
-        /** @var EventDispatcher $dispatcher */
         $dispatcher = static::getContainer()->get('event_dispatcher');
 
         $eventDidRun = false;
         $listenerClosure = static function (MailSentEvent $event) use (&$eventDidRun): void {
             $eventDidRun = true;
-            static::assertStringContainsString('Contact email address: test@shopware.com', $event->getContents()['text/html']);
-            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $event->getContents()['text/html']);
+            $htmlText = $event->getContents()['text/html'];
+            self::assertIsString($htmlText);
+            static::assertStringContainsString('Contact email address: test@shopware.com', $htmlText);
+            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $htmlText);
         };
 
         $this->addEventListener($dispatcher, MailSentEvent::class, $listenerClosure);
@@ -93,7 +93,6 @@ class ContactFormRouteTest extends TestCase
             default => $this->createCategoryData(true),
         };
 
-        /** @var EventDispatcher $dispatcher */
         $dispatcher = static::getContainer()->get('event_dispatcher');
 
         $eventDidRun = false;
@@ -101,8 +100,10 @@ class ContactFormRouteTest extends TestCase
         $listenerClosure = static function (MailSentEvent $event) use (&$eventDidRun, &$recipients): void {
             $eventDidRun = true;
             $recipients = $event->getRecipients();
-            static::assertStringContainsString('Contact email address: test@shopware.com', $event->getContents()['text/html']);
-            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $event->getContents()['text/html']);
+            $htmlText = $event->getContents()['text/html'];
+            self::assertIsString($htmlText);
+            static::assertStringContainsString('Contact email address: test@shopware.com', $htmlText);
+            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $htmlText);
         };
 
         $this->addEventListener($dispatcher, MailSentEvent::class, $listenerClosure);
@@ -149,14 +150,15 @@ class ContactFormRouteTest extends TestCase
         $formSlotId = $this->ids->create('form-slot');
         $this->createCmsFormData($formSlotId);
 
-        /** @var EventDispatcher $dispatcher */
         $dispatcher = static::getContainer()->get('event_dispatcher');
 
         $eventDidRun = false;
         $listenerClosure = static function (MailSentEvent $event) use (&$eventDidRun): void {
             $eventDidRun = true;
-            static::assertStringContainsString('Contact email address: test@shopware.com', $event->getContents()['text/html']);
-            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $event->getContents()['text/html']);
+            $htmlText = $event->getContents()['text/html'];
+            self::assertIsString($htmlText);
+            static::assertStringContainsString('Contact email address: test@shopware.com', $htmlText);
+            static::assertStringContainsString('essage: Lorem ipsum dolor sit amet', $htmlText);
         };
 
         $this->addEventListener($dispatcher, MailSentEvent::class, $listenerClosure);
