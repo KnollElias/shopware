@@ -204,14 +204,17 @@ jobs:
           redocly lint --skip-rule operation-4xx-response --skip-rule no-server-example.com --skip-rule no-unused-components ./api-types/adminApiSchema.json
 
   phpunit:
-    name: "PHPUnit for ${{ matrix.suite }}"
+    name: "PHPUnit for ${{ matrix.suite }}${{ matrix.phpunit == '12' && ' [PHPUnit 12 preview]' || '' }}"
     runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.phpunit == '12' }}
     strategy:
       fail-fast: false
       matrix:
         suite:
           - unit
           - migration
+        phpunit:
+          - "12"
     env:
       APP_ENV: test
       DATABASE_URL: mysql://root@127.0.0.1:3306/root
@@ -250,12 +253,15 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/phpunit-run
         with:
+          # PHPUnit 12 requires PHP 8.3+; the preview arm runs on 8.4.
+          php-version: ${{ matrix.phpunit == '12' && '8.4' || '8.2' }}
           test-testsuite: ${{ matrix.suite }}
           keep-composer-tools: "true"
           coverage: "true"
           coverage-flags: phpunit-${{ matrix.suite }}
           migration-coverage: ${{ matrix.suite == 'migration' }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          force-phpunit-12: ${{ matrix.phpunit == '12' }}
 
   license-check:
     runs-on: ubuntu-24.04

@@ -1,5 +1,8 @@
 <?php
 
+// Preview branch (ci/phpunit-12-preview-always): every default/nightly integration shard carries
+// phpunit=12 and runs on PHP 8.3+, so the phpunit job force-installs PHPUnit 12 and runs non-blocking
+// (continue-on-error). The $major arm is left untouched — it feeds integration-major.yml, not this preview.
 $nightly = $_SERVER['argv'][1] ?? false;
 $major = filter_var($_SERVER['argv'][2] ?? false, \FILTER_VALIDATE_BOOLEAN);
 
@@ -30,11 +33,11 @@ if ($major) {
     return;
 }
 
-$php = ['8.2'];
+$php = ['8.3'];
 $db = ['mysql:8.0'];
 
 if ($nightly) {
-    $php = ['8.2', '8.5'];
+    $php = ['8.3', '8.5'];
     $db = ['mysql:8.0', 'mariadb:11', 'quay.io/mariadb-foundation/mariadb-devel:verylatest'];
 }
 
@@ -47,16 +50,19 @@ $matrix = [
         'php' => $php,
         'db' => $db,
         'opensearch' => ['opensearchproject/opensearch:3'],
+        'phpunit' => ['12'],
         'include' => [
             [
                 'test' => ['testsuite' => 'migration'],
-                'php' => '8.2',
-                'db' => 'mariadb:11'
+                'php' => '8.3',
+                'db' => 'mariadb:11',
+                'phpunit' => '12'
             ],
             [
                 'test' => ['testsuite' => 'devops'],
                 'php' => '8.5',
-                'db' => 'mariadb:11'
+                'db' => 'mariadb:11',
+                'phpunit' => '12'
             ]
         ]
     ]
@@ -68,6 +74,7 @@ if ($nightly) {
         'php' => '8.4',
         'db' => 'mysql:8.0',
         'opensearch' => 'opensearchproject/opensearch:2',
+        'phpunit' => '12',
     ];
     /** @deprecated tag:v6.8.0 - Support for OpenSearch 1 will be removed in v6.8.0 (update the docs as well!) */
     $matrix['matrix']['include'][] = [
@@ -75,6 +82,7 @@ if ($nightly) {
         'php' => '8.4',
         'db' => 'mysql:8.0',
         'opensearch' => 'opensearchproject/opensearch:1',
+        'phpunit' => '12',
     ];
 }
 
