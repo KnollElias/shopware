@@ -104,6 +104,7 @@
         <service id="Shopware\Core\Framework\Adapter\Twig\Extension\SeoUrlFunctionExtension">
             <argument type="service" id="twig.extension.routing"/>
             <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface" />
+            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlRoute\EntityRouteResolver"/>
             <tag name="twig.extension"/>
         </service>
 
