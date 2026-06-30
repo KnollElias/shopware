@@ -167,6 +167,12 @@
             <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPersister"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="sales_channel.repository"/>
+            <argument type="tagged_iterator" tag="shopware.entity.seo_url.route"/>
+        </service>
+
+        <service id="Shopware\Core\Content\Seo\SeoUrlRoute\StoreApiSeoUrlUpdateListener">
+            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlUpdater"/>
+            <tag name="kernel.event_subscriber"/>
         </service>
 
         <service id="Shopware\Core\Framework\Adapter\Twig\Extension\BuildBreadcrumbExtension">
