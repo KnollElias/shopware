@@ -85,6 +85,7 @@
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
+            <argument type="tagged_iterator" tag="shopware.entity.seo_url.route"/>
 
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
