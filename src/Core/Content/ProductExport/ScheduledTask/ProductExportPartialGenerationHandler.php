@@ -52,7 +52,6 @@ final readonly class ProductExportPartialGenerationHandler
         private SalesChannelContextServiceInterface $salesChannelContextService,
         private SalesChannelContextPersister $contextPersister,
         private Connection $connection,
-        private int $readBufferSize,
         private LanguageLocaleCodeProvider $languageLocaleProvider,
         private ClockInterface $clock,
     ) {
@@ -67,7 +66,8 @@ final readonly class ProductExportPartialGenerationHandler
             return;
         }
 
-        $exportResult = $this->runExport($productExport, $productExportPartialGeneration->getOffset(), $context);
+        $offset = $productExportPartialGeneration->getOffset();
+        $exportResult = $this->runExport($productExport, $offset, $context);
 
         $filePath = $this->productExportFileHandler->getFilePath($productExport, true);
 
@@ -80,15 +80,15 @@ final readonly class ProductExportPartialGenerationHandler
         $this->productExportFileHandler->writeProductExportContent(
             $exportResult->getContent(),
             $filePath,
-            $productExportPartialGeneration->getOffset() > 0
+            $offset > 0
         );
 
-        if ($productExportPartialGeneration->getOffset() + $this->readBufferSize < $exportResult->getTotal()) {
+        if ($exportResult->hasNextBatch()) {
             $this->messageBus->dispatch(
                 new ProductExportPartialGeneration(
-                    $productExportPartialGeneration->getProductExportId(),
-                    $productExportPartialGeneration->getSalesChannelId(),
-                    $productExportPartialGeneration->getOffset() + $this->readBufferSize
+                    productExportId: $productExportPartialGeneration->getProductExportId(),
+                    salesChannelId: $productExportPartialGeneration->getSalesChannelId(),
+                    offset: $exportResult->getOffset()
                 )
             );
 
@@ -132,20 +132,21 @@ final readonly class ProductExportPartialGenerationHandler
         int $offset,
         Context $context
     ): ?ProductExportResult {
-        $this->productExportRepository->update([[
-            'id' => $productExport->getId(),
-            'isRunning' => true,
-        ]], $context);
+        if ($offset === 0) {
+            // Only mark running once, at the start of the batch chain.
+            $this->productExportRepository->update([[
+                'id' => $productExport->getId(),
+                'isRunning' => true,
+            ]], $context);
+        }
 
         return $this->productExportGenerator->generate(
             $productExport,
             new ExportBehavior(
-                false,
-                false,
-                true,
-                false,
-                false,
-                $offset
+                batchMode: true,
+                generateHeader: false,
+                generateFooter: false,
+                offset: $offset
             )
         );
     }
