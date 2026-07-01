@@ -13,6 +13,7 @@
             <argument>%kernel.debug%</argument>
 
             <tag name="kernel.event_subscriber"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Core\Framework\Script\Execution\ScriptExecutor" public="true">

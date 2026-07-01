@@ -79,6 +79,7 @@
             <argument type="service" id="Shopware\Storefront\Framework\Routing\CachedDomainLoader.inner"/>
             <argument type="service" id="cache.object"/>
             <argument type="service" id="logger"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <service id="Shopware\Storefront\Framework\Routing\CachedDomainLoaderInvalidator">
