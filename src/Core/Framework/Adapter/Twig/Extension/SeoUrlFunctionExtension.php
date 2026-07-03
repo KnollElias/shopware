@@ -12,14 +12,11 @@ use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
 /**
- * @deprecated tag:v6.8.0 - reason:becomes-internal - Will be internal in v6.8.0
+ * @internal
  */
 #[Package('framework')]
 class SeoUrlFunctionExtension extends AbstractExtension
 {
-    /**
-     * @internal
-     */
     public function __construct(
         private readonly RoutingExtension $routingExtension,
         private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
