@@ -132,13 +132,14 @@ final readonly class ProductExportPartialGenerationHandler
         int $offset,
         Context $context
     ): ?ProductExportResult {
-        if ($offset === 0) {
-            // Only mark running once, at the start of the batch chain.
-            $this->productExportRepository->update([[
-                'id' => $productExport->getId(),
-                'isRunning' => true,
-            ]], $context);
-        }
+        // Mark running on every batch: this refreshes product_export.updated_at, which
+        // ProductExportGenerateTaskHandler::isStale() relies on as a heartbeat to detect a
+        // stuck export. Skipping it for later batches would make long exports look stale and
+        // get re-dispatched while still running.
+        $this->productExportRepository->update([[
+            'id' => $productExport->getId(),
+            'isRunning' => true,
+        ]], $context);
 
         return $this->productExportGenerator->generate(
             $productExport,
