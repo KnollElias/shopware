@@ -12,6 +12,7 @@ use Shopware\Core\Framework\Bundle;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\Migration\MigrationCollection;
 use Shopware\Core\Framework\Migration\MigrationCollectionLoader;
 use Shopware\Core\Framework\Plugin;
@@ -45,11 +46,16 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Kernel;
 use Shopware\Core\System\CustomEntity\Schema\CustomEntityPersister;
 use Shopware\Core\System\CustomEntity\Schema\CustomEntitySchemaUpdater;
+use Shopware\Core\System\CustomField\CustomFieldSetPersister;
+use Shopware\Core\System\CustomField\Xml\CustomFields;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
 use Symfony\Component\Cache\CacheItem;
+use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -87,6 +93,8 @@ class PluginLifecycleServiceTest extends TestCase
 
     private RequestStack&MockObject $requestStackMock;
 
+    private CustomFieldSetPersister&MockObject $customFieldSetPersister;
+
     protected function setUp(): void
     {
         $this->pluginRepoMock = $this->createMock(EntityRepository::class);
@@ -107,6 +115,7 @@ class PluginLifecycleServiceTest extends TestCase
         $this->pluginMock->method('getMigrationNamespace')->willReturn('migration');
 
         $this->requestStackMock = $this->createMock(RequestStack::class);
+        $this->customFieldSetPersister = $this->createMock(CustomFieldSetPersister::class);
 
         $this->pluginLifecycleService = new PluginLifecycleService(
             $this->pluginRepoMock,
@@ -126,7 +135,18 @@ class PluginLifecycleServiceTest extends TestCase
             $this->createMock(VersionSanitizer::class),
             $this->createMock(DefinitionInstanceRegistry::class),
             $this->requestStackMock,
+            $this->customFieldSetPersister,
+            new NativeClock()
         );
+    }
+
+    protected function tearDown(): void
+    {
+        // uninstallPlugin() populates PluginLifecycleService::$pluginToBeDeleted; reset just that
+        // one static so it doesn't leak into other tests. Do NOT use #[BackupStaticProperties(true)]:
+        // it serialize-restores every loaded class's statics, which desyncs Doctrine's global
+        // Type registry (spl_object_id-keyed reverse index) and breaks Type::lookupName() worker-wide.
+        (new \ReflectionClass(PluginLifecycleService::class))->setStaticPropertyValue('pluginToBeDeleted', null);
     }
 
     public function testInstallPlugin(): void
@@ -171,8 +191,7 @@ class PluginLifecycleServiceTest extends TestCase
         $this->pluginMock->expects($this->once())->method('executeComposerCommands')->willReturn(true);
         $this->pluginMock->expects($this->once())->method('install')->willThrowException(new \Exception('not working'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('not working');
+        $this->expectExceptionObject(new \Exception('not working'));
 
         $this->pluginLifecycleService->installPlugin($pluginEntityMock, $context);
     }
@@ -306,6 +325,27 @@ class PluginLifecycleServiceTest extends TestCase
         $this->pluginLifecycleService->uninstallPlugin($pluginEntityMock, $context);
     }
 
+    public function testUninstallPluginRemovesCustomFieldsByExtensionName(): void
+    {
+        $pluginEntityMock = $this->getPluginEntityMock();
+        $context = Context::createDefaultContext();
+        $extensionName = $this->pluginMock->getName();
+
+        $pluginEntityMock->setInstalledAt(new \DateTime());
+        $pluginEntityMock->setActive(false);
+
+        $this->customFieldSetPersister->expects($this->once())
+            ->method('sync')
+            ->with(
+                static::callback(static fn (CustomFields $customFields): bool => $customFields->getCustomFieldSets() === []),
+                null,
+                $extensionName,
+                $context
+            );
+
+        $this->pluginLifecycleService->uninstallPlugin($pluginEntityMock, $context);
+    }
+
     public function testUninstallPluginNotInstalled(): void
     {
         $pluginEntityMock = $this->getPluginEntityMock();
@@ -402,6 +442,27 @@ class PluginLifecycleServiceTest extends TestCase
         $this->pluginLifecycleService->updatePlugin($plugin, Context::createDefaultContext());
     }
 
+    public function testUpdatePluginSyncsEmptyCustomFieldsWhenXmlFileIsMissing(): void
+    {
+        $plugin = $this->getPluginEntityMock();
+        $context = Context::createDefaultContext();
+        $extensionName = $this->pluginMock->getName();
+
+        $plugin->setInstalledAt(new \DateTime());
+        $plugin->setActive(false);
+
+        $this->customFieldSetPersister->expects($this->once())
+            ->method('sync')
+            ->with(
+                static::callback(static fn (CustomFields $customFields): bool => $customFields->getCustomFieldSets() === []),
+                null,
+                $extensionName,
+                $context
+            );
+
+        $this->pluginLifecycleService->updatePlugin($plugin, $context);
+    }
+
     public function testUninstallPluginWithComposerCommandExecutionDisabledAfterUpdateWithoutCli(): void
     {
         $pluginLifecycleService = $this->getMockBuilder(PluginLifecycleService::class)
@@ -423,6 +484,8 @@ class PluginLifecycleServiceTest extends TestCase
                 $this->createMock(VersionSanitizer::class),
                 $this->createMock(DefinitionInstanceRegistry::class),
                 $this->requestStackMock,
+                $this->createMock(CustomFieldSetPersister::class),
+                new MockClock(),
             ])
             ->onlyMethods(['isCLI'])
             ->getMock();
@@ -455,10 +518,6 @@ class PluginLifecycleServiceTest extends TestCase
 
         static::assertEmpty($replacedEventDispatcher->getListeners());
         static::assertCount(1, $this->eventDispatcher->getListeners());
-
-        // need to reset the static properties to avoid side effects in other test cases
-        $reflection = new \ReflectionClass(PluginLifecycleService::class);
-        $reflection->setStaticPropertyValue('pluginToBeDeleted', null);
     }
 
     public function testUpdatePluginWithComposerCommandExecutionDisabledAfterUpdateButInstalledViaComposerDirectly(): void
@@ -523,6 +582,65 @@ class PluginLifecycleServiceTest extends TestCase
         static::assertInstanceOf(PluginPreActivateEvent::class, $returnedEvents[0]);
         static::assertInstanceOf(PluginPostActivateEvent::class, $returnedEvents[1]);
         static::assertTrue($pluginEntityMock->getActive());
+    }
+
+    public function testActivatePluginRollsBackActiveStateWhenPostActivateEventFails(): void
+    {
+        $pluginEntityMock = $this->getPluginEntityMock();
+        $pluginEntityMock->setInstalledAt(new \DateTime());
+        $pluginEntityMock->setActive(false);
+
+        $context = Context::createDefaultContext();
+        $exception = new \RuntimeException('Post activate failed');
+
+        $this->cacheItemPoolInterfaceMock->method('getItem')->willReturn(new CacheItem());
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatchMatcher = $this->exactly(2);
+        $eventDispatcher->expects($eventDispatchMatcher)
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event, ?string $eventName = null) use ($eventDispatchMatcher, $exception): object {
+                static::assertNull($eventName);
+
+                if ($eventDispatchMatcher->numberOfInvocations() === 1) {
+                    static::assertInstanceOf(PluginPreActivateEvent::class, $event);
+
+                    return $event;
+                }
+
+                static::assertInstanceOf(PluginPostActivateEvent::class, $event);
+
+                throw $exception;
+            });
+
+        (new \ReflectionProperty(PluginLifecycleService::class, 'eventDispatcher'))->setValue($this->pluginLifecycleService, $eventDispatcher);
+
+        $repoUpdateMatcher = $this->exactly(2);
+        $this->pluginRepoMock->expects($repoUpdateMatcher)
+            ->method('update')
+            ->willReturnCallback(static function (array $data, Context $actualContext) use ($repoUpdateMatcher, $pluginEntityMock, $context): EntityWrittenContainerEvent {
+                static::assertSame($context, $actualContext);
+                static::assertSame(
+                    [
+                        [
+                            'id' => $pluginEntityMock->getId(),
+                            'active' => $repoUpdateMatcher->numberOfInvocations() === 1,
+                        ],
+                    ],
+                    $data
+                );
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $actualContext, []);
+            });
+
+        try {
+            $this->pluginLifecycleService->activatePlugin($pluginEntityMock, $context);
+            static::fail('Expected post activate failure to be rethrown.');
+        } catch (\RuntimeException $actualException) {
+            static::assertSame($exception, $actualException);
+        }
+
+        static::assertFalse($pluginEntityMock->getActive());
     }
 
     public function testActivatePluginNotInstalled(): void
@@ -595,8 +713,7 @@ class PluginLifecycleServiceTest extends TestCase
 
         $this->container->set('kernel', $kernelMock);
 
-        $this->expectException(PluginException::class);
-        $this->expectExceptionMessage('Container parameter "kernel.plugin_dir" needs to be of type "string"');
+        $this->expectExceptionObject(PluginException::invalidContainerParameter('kernel.plugin_dir', 'string'));
 
         $this->pluginLifecycleService->activatePlugin($pluginEntityMock, $context);
     }
@@ -632,8 +749,7 @@ class PluginLifecycleServiceTest extends TestCase
             ]
         ));
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Failed to reboot the kernel');
+        $this->expectExceptionObject(new \RuntimeException('Failed to reboot the kernel'));
 
         $this->pluginLifecycleService->activatePlugin($pluginEntityMock, $context);
     }
@@ -740,8 +856,7 @@ class PluginLifecycleServiceTest extends TestCase
 
         $this->pluginRepoMock->method('update')->willThrowException(new \Exception('failed update'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('failed update');
+        $this->expectExceptionObject(new \Exception('failed update'));
 
         $this->pluginLifecycleService->deactivatePlugin($pluginEntityMock, $context);
     }
@@ -814,8 +929,7 @@ class PluginLifecycleServiceTest extends TestCase
 
         $this->cacheItemPoolInterfaceMock->method('getItem')->willReturn(new CacheItem());
 
-        $this->expectException(PluginException::class);
-        $this->expectExceptionMessage('"Shopware\Core\Framework\Plugin" in the container should be an instance of Shopware\Core\Framework\Plugin');
+        $this->expectExceptionObject(PluginException::wrongBaseClass(Plugin::class));
 
         $this->pluginLifecycleService->deactivatePlugin($pluginEntityMock, $context);
     }

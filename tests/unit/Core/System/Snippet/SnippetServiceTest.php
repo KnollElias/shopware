@@ -39,7 +39,6 @@ use Shopware\Tests\Unit\Core\System\Snippet\Mock\MockSnippetFile;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\MessageCatalogue;
-use Symfony\Component\Validator\Validation;
 
 /**
  * @internal
@@ -396,10 +395,11 @@ class SnippetServiceTest extends TestCase
             ],
         ];
 
-        yield 'es-AR iso loads exact locale only' => [
+        yield 'es-AR iso loads exact locale and bare language as base' => [
             'iso' => 'es-AR',
             'expectedSnippets' => [
                 'title' => 'Country es-AR',
+                'baseOnly' => 'Agnostic ES',
             ],
         ];
 
@@ -410,9 +410,12 @@ class SnippetServiceTest extends TestCase
             ],
         ];
 
-        yield 'unknown regional variant returns nothing when only bare language exists' => [
+        yield 'unknown regional variant falls back to agnostic language' => [
             'iso' => 'es-EM',
-            'expectedSnippets' => [],
+            'expectedSnippets' => [
+                'title' => 'Agnostic ES',
+                'baseOnly' => 'Agnostic ES',
+            ],
         ];
     }
 
@@ -504,7 +507,7 @@ class SnippetServiceTest extends TestCase
 
         $snippetFileCollection = $snippetFileCollection ?? $this->snippetCollection;
         $connection = $connection ?? $this->connection;
-        $snippetFilterFactory = $snippetFilterFactory ?? $this->createMock(SnippetFilterFactory::class);
+        $snippetFilterFactory = $snippetFilterFactory ?? static::createStub(SnippetFilterFactory::class);
         $extensionDispatcher = $extensionDispatcher ?? new ExtensionDispatcher(new EventDispatcher());
 
         /** @var EntityRepository<SnippetCollection> $snippetRepository */
@@ -538,9 +541,9 @@ class SnippetServiceTest extends TestCase
             languageRepository: $languageRepository,
             localeRepository: $localeRepository,
             snippetSetRepository: $snippetSetRepository,
-            client: $this->createMock(ClientInterface::class),
+            client: static::createStub(ClientInterface::class),
             config: $config,
-            validator: Validation::createValidator(),
+            eventDispatcher: new EventDispatcher(),
         );
     }
 }

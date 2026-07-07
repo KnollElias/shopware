@@ -510,15 +510,25 @@
 
                                                                 {% sw_thumbnails 'gallery-slider-image-thumbnails' with {
                                                                     media: mediaItems|first,
-                                                                    attributes: attributes
+                                                                    attributes: attributes,
+                                                                    sizes: {
+                                                                        xs: '100vw',
+                                                                        sm: '100vw',
+                                                                        md: '100vw',
+                                                                        lg: '60vw',
+                                                                        xl: '50vw',
+                                                                        xxl: '800px'
+                                                                    }
                                                                 } %}
                                                             {% endblock %}
                                                         {% endif %}
                                                     {% endfor %}
                                                 {% else %}
-                                                    {% sw_icon 'placeholder' style {
-                                                        'size': 'fluid'
-                                                    } %}
+                                                    {% block element_image_gallery_inner_image_placeholder %}
+                                                        {% sw_icon 'placeholder' style {
+                                                            'size': 'fluid'
+                                                        } %}
+                                                    {% endblock %}
                                                 {% endif %}
                                             </div>
                                         {% endblock %}
@@ -593,7 +603,7 @@
                                                                                 alt: (image.translated.alt ?: false)
                                                                             }) %}
 
-                                                                            {% set attributes = attributes|merge({ loading: 'lazy' }) %}
+                                                                            {# No native loading="lazy" here: in the "left" layout the thumbnail strip is a vertical tiny-slider, whose init waits for every slide image to report `complete` before firing `onInit`. Browsers that defer lazy images (Firefox, Safari) never complete them, so `onInit` never runs and the `is-loading` class is never removed. #}
 
                                                                             {# @deprecated tag:v6.8.0 - Product image microdata replaced by JSON-LD in json-ld-product.html.twig. Will be removed. #}
                                                                             {% if not feature('JSON_LD_DATA') and isProduct %}

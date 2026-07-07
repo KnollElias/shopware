@@ -5,6 +5,7 @@ namespace Shopware\Tests\Integration\Core\Content\Product\SalesChannel\Detail;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
@@ -14,6 +15,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,6 +42,11 @@ class ProductDetailRouteTest extends TestCase
     protected function setUp(): void
     {
         $this->ids = new IdsCollection();
+
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', false);
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.findBestVariant', false);
 
         $this->browser = $this->createCustomSalesChannelBrowser([
             'id' => $this->ids->create('sales-channel'),
@@ -200,6 +207,39 @@ class ProductDetailRouteTest extends TestCase
         $product = $response['product'];
         static::assertArrayHasKey('productNumber', $product);
         static::assertSame('variant-3', $product['productNumber']);
+    }
+
+    public function testLoadParentSearchUsesMatchedVariantWhenFindBestVariantEnabled(): void
+    {
+        static::getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.findBestVariant', true);
+
+        $this->createVariantProducts([
+            'mainVariantId' => $this->ids->get('variant-2'),
+            'displayParent' => false,
+        ]);
+
+        $this->browser->request('POST', $this->getUrl($this->ids->get('variants')) . '?search=variant-3');
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode(), print_r($response, true));
+        static::assertSame('variant-3', $response['product']['productNumber']);
+    }
+
+    public function testLoadParentSearchKeepsMainVariantWhenFindBestVariantDisabled(): void
+    {
+        $this->createVariantProducts([
+            'mainVariantId' => $this->ids->get('variant-2'),
+            'displayParent' => false,
+        ]);
+
+        $this->browser->request('POST', $this->getUrl($this->ids->get('variants')) . '?search=variant-3');
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode(), print_r($response, true));
+        static::assertSame('variant-2', $response['product']['productNumber']);
     }
 
     public function testIncludes(): void
@@ -463,6 +503,7 @@ class ProductDetailRouteTest extends TestCase
             'productNumber' => 'translated-parent-product',
             'stock' => 10,
             'active' => true,
+            'type' => ProductDefinition::TYPE_PHYSICAL,
             'price' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false],
             ],
@@ -508,6 +549,7 @@ class ProductDetailRouteTest extends TestCase
                 'productNumber' => 'translated-variant-product',
                 'stock' => 10,
                 'active' => true,
+                'type' => ProductDefinition::TYPE_PHYSICAL,
                 'options' => [],
                 'price' => [
                     ['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false],

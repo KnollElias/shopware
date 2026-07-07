@@ -348,6 +348,66 @@ class ProductControllerTest extends TestCase
         static::assertStringNotContainsString('itemprop="length"', $content);
     }
 
+    public function testReferencePriceIsRenderedWithSingleCalculatedPrice(): void
+    {
+        $unitId = Uuid::randomHex();
+        $ruleId = Uuid::randomHex();
+        $productId = $this->createProduct([
+            'unitId' => $unitId,
+            'unit' => [
+                'id' => $unitId,
+                'shortCode' => 'ml',
+                'name' => 'Milliliter',
+            ],
+            'purchaseUnit' => 500.0,
+            'referenceUnit' => 1000.0,
+            'prices' => [
+                [
+                    'quantityStart' => 1,
+                    'rule' => [
+                        'id' => $ruleId,
+                        'priority' => 1,
+                        'name' => 'Reference price rule',
+                        'conditions' => [
+                            [
+                                'type' => 'orContainer',
+                                'position' => 0,
+                                'children' => [
+                                    [
+                                        'type' => 'andContainer',
+                                        'position' => 0,
+                                        'children' => [
+                                            ['type' => 'alwaysValid', 'position' => 0],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'price' => [
+                        ['currencyId' => Defaults::CURRENCY, 'gross' => 4.0, 'net' => 3.36, 'linked' => false],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response = $this->request(
+            'GET',
+            '/my-product/' . $productId,
+            []
+        );
+
+        $this->checkStatusCode($response);
+
+        $crawler = new Crawler();
+        $crawler->addHtmlContent((string) $response->getContent());
+
+        $referencePrice = $crawler->filter('.price-unit-reference-content');
+
+        static::assertCount(1, $referencePrice);
+        static::assertStringContainsString('/ 1000 Milliliter', $referencePrice->text());
+    }
+
     public function testProductQuickViewWidgetLoadedHookScriptsAreExecuted(): void
     {
         $productId = $this->createProduct();
@@ -363,6 +423,44 @@ class ProductControllerTest extends TestCase
         $traces = static::getContainer()->get(ScriptTraces::class)->getTraces();
 
         static::assertArrayHasKey(ProductQuickViewWidgetLoadedHook::HOOK_NAME, $traces);
+    }
+
+    public function testProductQuickViewManufacturerIsNotLinkedWithoutUrl(): void
+    {
+        $productId = $this->createProduct(['manufacturer' => ['name' => 'no-link-manufacturer']]);
+
+        $response = $this->request('GET', '/quickview/' . $productId, []);
+
+        $this->checkStatusCode($response);
+
+        $crawler = new Crawler();
+        $crawler->addHtmlContent((string) $response->getContent());
+
+        $manufacturerLink = $crawler->filter('a.quickview-minimal-product-manufacturer');
+        static::assertCount(0, $manufacturerLink);
+
+        $manufacturer = $crawler->filter('span.quickview-minimal-product-manufacturer');
+        static::assertCount(1, $manufacturer);
+        static::assertStringContainsString('no-link-manufacturer', $manufacturer->text());
+    }
+
+    public function testProductQuickViewManufacturerIsLinkedWithUrl(): void
+    {
+        $productId = $this->createProduct(['manufacturer' => ['name' => 'linked-manufacturer', 'link' => 'shopware.com']]);
+
+        $response = $this->request('GET', '/quickview/' . $productId, []);
+
+        $this->checkStatusCode($response);
+
+        $crawler = new Crawler();
+        $crawler->addHtmlContent((string) $response->getContent());
+
+        $manufacturerLink = $crawler->filter('a.quickview-minimal-product-manufacturer');
+        static::assertCount(1, $manufacturerLink);
+        static::assertSame('https://shopware.com', $manufacturerLink->attr('href'));
+        static::assertStringContainsString('linked-manufacturer', $manufacturerLink->text());
+
+        static::assertCount(0, $crawler->filter('span.quickview-minimal-product-manufacturer'));
     }
 
     public function testProductReviewsLoadedScriptsAreExecuted(): void
@@ -474,12 +572,12 @@ class ProductControllerTest extends TestCase
             ],
             'defaultBillingAddressId' => $addressId,
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
-            'email' => 'testuser@example.com',
+            'email' => $customerId . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
             'salutationId' => $this->getValidSalutationId(),
-            'customerNumber' => '12345',
+            'customerNumber' => $customerId,
         ];
 
         $repo = static::getContainer()->get('customer.repository');

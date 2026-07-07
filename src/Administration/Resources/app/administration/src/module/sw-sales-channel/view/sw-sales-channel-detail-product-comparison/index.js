@@ -58,6 +58,7 @@ export default {
     },
 
     computed: {
+        /** @deprecated tag:v6.8.0 - Will be removed */
         isAgenticCommerce() {
             return this.salesChannel?.typeId === Defaults.agenticCommerceTypeId;
         },
@@ -109,7 +110,7 @@ export default {
     methods: {
         validateTemplate() {
             const notificationValidateSuccess = {
-                message: this.$tc('sw-sales-channel.detail.productComparison.notificationMessageValidateSuccessful'),
+                message: this.$t('sw-sales-channel.detail.productComparison.notificationMessageValidateSuccessful'),
             };
 
             this.isLoadingValidate = true;
@@ -189,7 +190,7 @@ export default {
 
             if (!template) {
                 this.createNotificationError({
-                    message: this.$tc('sw-sales-channel.detail.agenticCommerce.errorLoadingTemplate'),
+                    message: this.$t('sw-sales-channel.detail.agenticCommerce.errorLoadingTemplate'),
                 });
 
                 return;
@@ -200,7 +201,7 @@ export default {
             this.productExport.footerTemplate = template.footerTemplate;
 
             this.createNotificationInfo({
-                message: this.$tc('sw-sales-channel.detail.agenticCommerce.resetTemplateSuccess'),
+                message: this.$t('sw-sales-channel.detail.agenticCommerce.resetTemplateSuccess'),
             });
         },
 

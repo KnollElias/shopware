@@ -4,6 +4,7 @@ namespace Shopware\Tests\Unit\Storefront\Page\Product;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -131,8 +132,8 @@ class ProductPageLoaderTest extends TestCase
         $reviewRepositoryMock = $this->createMock(EntityRepository::class);
         $reviewRepositoryMock->expects($this->never())->method('search');
 
-        $systemConfigMock = $this->createMock(SystemConfigService::class);
-        $systemConfigMock->method('getBool')->with('core.listing.showReview')->willReturn(false);
+        $systemConfigMock = static::createStub(SystemConfigService::class);
+        $systemConfigMock->method('getBool')->willReturn(false);
 
         $productPageLoader = $this->getProductPageLoaderWithProduct(
             $productId,
@@ -221,10 +222,9 @@ class ProductPageLoaderTest extends TestCase
             new FieldSorting('position')
         );
 
-        $productDetailRouteMock = $this->createMock(ProductDetailRoute::class);
+        $productDetailRouteMock = static::createStub(ProductDetailRoute::class);
         $productDetailRouteMock
             ->method('load')
-            ->with($productId, $request, $salesChannelContext, $criteria)
             ->willReturn(new ProductDetailRouteResponse($product, null));
 
         if ($reviewRepository === null) {
@@ -244,17 +244,18 @@ class ProductPageLoaderTest extends TestCase
         }
 
         if ($systemConfigService === null) {
-            $systemConfigService = $this->createMock(SystemConfigService::class);
+            $systemConfigService = static::createStub(SystemConfigService::class);
             // Default: reviews are enabled so the repository is actually called.
-            $systemConfigService->method('getBool')->with('core.listing.showReview')->willReturn(true);
+            $systemConfigService->method('getBool')->willReturn(true);
         }
 
         return new ProductPageLoader(
-            $this->createMock(GenericPageLoader::class),
-            $this->createMock(EventDispatcherInterface::class),
+            static::createStub(GenericPageLoader::class),
+            static::createStub(EventDispatcherInterface::class),
             $productDetailRouteMock,
             $reviewRepository,
             $systemConfigService,
+            static::createStub(CategoryBreadcrumbBuilder::class)
         );
     }
 

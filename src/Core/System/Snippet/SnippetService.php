@@ -26,7 +26,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\MessageCatalogueInterface;
 
 /**
- * @phpstan-type Snippet array{value: string, origin: string, resetTo: string, translationKey: string, author: string, id: string|null, setId: string}
+ * @phpstan-type Snippet array{value: string, origin: string, resetTo: string, translationKey: string, author: string, id: string|null, setId: string, hasFileValue: bool}
  * @phpstan-type SnippetArray array<string, array{snippets: array<string, Snippet>}>
  * @phpstan-type SnippetFilter array{edited?: true, added?: true, empty?: true, author?: list<string>, namespace?: list<string>, term?: string}
  * @phpstan-type SnippetSort array{sortBy: string, sortDirection: string}|array{}
@@ -306,14 +306,14 @@ class SnippetService
     }
 
     /**
-     * Collects snippet files for each given locale, with a canonical-form fallback.
+     * Collects snippet files for each given locale, with canonical-form and country agnostic fallbacks.
      *
-     *  For each locale (e.g., "es-AR"), the method first tries to load files
-     *  that match the exact locale. If that locale contains a region separator ("-"),
-     *  it will also load files for the base language (e.g., "es").
+     * For each locale (e.g., "de-AT"), files are loaded in ascending priority order:
+     * 1. Country agnostic language files (e.g. "de") as the lowest-priority base
+     * 2. Canonical-locale files (e.g. "de-DE") to pick up plugin files registered for the canonical variant
+     * 3. Exact-locale files (e.g. "de-AT") as the highest-priority override
      *
-     *  The base language snippet files are prepended, ensuring country-specific
-     *  snippets (e.g. "es-AR") override more general ones ("es").
+     * For locales without a region (e.g. "de"), only the exact files are returned.
      *
      * @param array<string, string> $isoList
      *
@@ -323,7 +323,15 @@ class SnippetService
     {
         $result = [];
         foreach ($isoList as $iso) {
-            $result[$iso] = $this->snippetFileCollection->getSnippetFilesWithLocaleFallback($iso);
+            $files = $this->snippetFileCollection->getSnippetFilesWithLocaleFallback($iso);
+
+            preg_match(SnippetPatterns::COMPLETE_LOCALE_PATTERN, $iso, $matches, \PREG_UNMATCHED_AS_NULL);
+            if (($matches['region'] ?? '') !== '') {
+                $bareFiles = $this->snippetFileCollection->getSnippetFilesByIso($matches['language']);
+                $files = [...$bareFiles, ...$files];
+            }
+
+            $result[$iso] = $files;
         }
 
         return $result;
@@ -405,6 +413,7 @@ class SnippetService
                             'resetTo' => '',
                             'setId' => $currentSetId,
                             'id' => null,
+                            'hasFileValue' => false,
                         ];
                     }
                 }
@@ -483,8 +492,10 @@ class SnippetService
                 ])
             );
 
+            $fileEntry = $fileSnippets[$snippet->getSetId()]['snippets'][$snippet->getTranslationKey()] ?? null;
             $currentSnippet['origin'] = '';
-            $currentSnippet['resetTo'] = $fileSnippets[$snippet->getSetId()]['snippets'][$snippet->getTranslationKey()]['origin'] ?? $snippet->getValue();
+            $currentSnippet['resetTo'] = $fileEntry['origin'] ?? $snippet->getValue();
+            $currentSnippet['hasFileValue'] = $fileEntry !== null;
             $result[$snippet->getSetId()]['snippets'][$snippet->getTranslationKey()] = $currentSnippet;
         }
 
@@ -570,6 +581,7 @@ class SnippetService
                         'origin' => $value,
                         'resetTo' => $value,
                         'translationKey' => $newIndex,
+                        'hasFileValue' => true,
                     ], $additionalParameters);
 
                     continue;

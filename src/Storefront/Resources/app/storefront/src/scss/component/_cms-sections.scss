@@ -5,8 +5,6 @@ General styling for cms sections
 */
 
 .cms-section {
-    overflow: hidden;
-
     &.bg-image {
         background-repeat: no-repeat;
         background-position: 50%;
@@ -21,6 +19,7 @@ General styling for cms sections
 
     .full-width {
         @include make-container();
+        --#{$prefix}gutter-x: 0;
     }
 
     .cms-section-sidebar {
