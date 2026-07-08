@@ -4,12 +4,14 @@ namespace Shopware\Tests\Unit\Core\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Service\AllServiceInstaller;
 use Shopware\Core\Service\Message\InstallServicesMessage;
+use Shopware\Core\Service\Message\UpdateServiceMessage;
 use Shopware\Core\Service\ServiceLifecycle;
 use Shopware\Core\Service\ServiceRegistry\Client as ServiceRegistryClient;
 use Shopware\Core\Service\ServiceRegistry\ServiceEntry;
@@ -36,7 +38,8 @@ class AllServiceInstallerTest extends TestCase
             $serviceLifeCycle,
             $this->buildAppRepository(),
             $messageBus,
-            $eventDispatcher
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -80,7 +83,8 @@ class AllServiceInstallerTest extends TestCase
             $serviceLifeCycle,
             $this->buildAppRepository([$app1]),
             $messageBus,
-            $eventDispatcher
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -123,6 +127,7 @@ class AllServiceInstallerTest extends TestCase
             $this->buildAppRepository([$app1, $app2]),
             $messageBus,
             $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -152,7 +157,8 @@ class AllServiceInstallerTest extends TestCase
             $serviceLifeCycle,
             $this->buildAppRepository(),
             $messageBus,
-            $eventDispatcher
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $envelope = new Envelope(new \stdClass());
@@ -179,6 +185,7 @@ class AllServiceInstallerTest extends TestCase
             $this->buildAppRepository(),
             $messageBus,
             $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -206,6 +213,7 @@ class AllServiceInstallerTest extends TestCase
             $this->buildAppRepository(),
             $messageBus,
             $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -244,6 +252,7 @@ class AllServiceInstallerTest extends TestCase
             $this->buildAppRepository(),
             $messageBus,
             $eventDispatcher,
+            static::createStub(LoggerInterface::class),
         );
 
         $serviceRegistryClient->expects($this->once())
@@ -269,6 +278,127 @@ class AllServiceInstallerTest extends TestCase
         $result = $serviceInstaller->install(Context::createDefaultContext());
 
         static::assertSame(['Service1', 'Service3'], $result);
+    }
+
+    public function testReconcileDoesNotDispatchUpdateMessageForOrphanedService(): void
+    {
+        $app1 = new AppEntity();
+        $app1->setUniqueIdentifier(Uuid::randomHex());
+        $app1->setName('Service1');
+        $orphan = new AppEntity();
+        $orphan->setUniqueIdentifier(Uuid::randomHex());
+        $orphan->setName('OrphanedService');
+
+        $serviceRegistryClient = $this->createMock(ServiceRegistryClient::class);
+        $serviceLifeCycle = $this->createMock(ServiceLifecycle::class);
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $eventDispatcher = static::createStub(EventDispatcherInterface::class);
+
+        $serviceInstaller = new AllServiceInstaller(
+            $serviceRegistryClient,
+            $serviceLifeCycle,
+            $this->buildAppRepository([$app1, $orphan]),
+            $messageBus,
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
+        );
+
+        $serviceRegistryClient->expects($this->once())
+            ->method('getAll')
+            ->willReturn([
+                new ServiceEntry('Service1', 'Service 1', 'https://service1.example.com', '/app-endpoint'),
+            ]);
+
+        $serviceLifeCycle->expects($this->never())->method('install');
+
+        $messageBus->expects($this->once())
+            ->method('dispatch')
+            ->with(static::callback(static fn ($message) => $message instanceof UpdateServiceMessage && $message->name === 'Service1'))
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $serviceInstaller->reconcile(Context::createDefaultContext());
+    }
+
+    public function testReconcileInstallsNewServicesWithoutEnqueuingUpdateForThem(): void
+    {
+        $app1 = new AppEntity();
+        $app1->setUniqueIdentifier(Uuid::randomHex());
+        $app1->setName('Service1');
+
+        $serviceRegistryClient = $this->createMock(ServiceRegistryClient::class);
+        $serviceLifeCycle = $this->createMock(ServiceLifecycle::class);
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+
+        $serviceInstaller = new AllServiceInstaller(
+            $serviceRegistryClient,
+            $serviceLifeCycle,
+            $this->buildAppRepository([$app1]),
+            $messageBus,
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
+        );
+
+        $serviceRegistryClient->expects($this->once())
+            ->method('getAll')
+            ->willReturn([
+                new ServiceEntry('Service1', 'Service 1', 'https://service1.example.com', '/app-endpoint'),
+                new ServiceEntry('Service2', 'Service 2', 'https://service2.example.com', '/app-endpoint'),
+            ]);
+
+        $serviceLifeCycle->expects($this->once())
+            ->method('install')
+            ->willReturnCallback(function (ServiceEntry $service): bool {
+                static::assertSame('Service2', $service->name);
+
+                return true;
+            });
+
+        $eventDispatcher->expects($this->once())->method('dispatch');
+
+        $messageBus->expects($this->once())
+            ->method('dispatch')
+            ->with(static::callback(static fn ($message) => $message instanceof UpdateServiceMessage && $message->name === 'Service1'))
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $result = $serviceInstaller->reconcile(Context::createDefaultContext());
+
+        static::assertSame(['Service2'], $result);
+    }
+
+    public function testReconcileDispatchesNoUpdatesWhenNoServicesInstalled(): void
+    {
+        $serviceRegistryClient = $this->createMock(ServiceRegistryClient::class);
+        $serviceLifeCycle = $this->createMock(ServiceLifecycle::class);
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+
+        $serviceInstaller = new AllServiceInstaller(
+            $serviceRegistryClient,
+            $serviceLifeCycle,
+            $this->buildAppRepository(),
+            $messageBus,
+            $eventDispatcher,
+            static::createStub(LoggerInterface::class),
+        );
+
+        $serviceRegistryClient->expects($this->once())
+            ->method('getAll')
+            ->willReturn([
+                new ServiceEntry('Service1', 'Service 1', 'https://service1.example.com', '/app-endpoint'),
+                new ServiceEntry('Service2', 'Service 2', 'https://service2.example.com', '/app-endpoint'),
+            ]);
+
+        $serviceLifeCycle->expects($this->exactly(2))
+            ->method('install')
+            ->willReturn(true);
+
+        $eventDispatcher->expects($this->once())->method('dispatch');
+
+        // A fresh shop only installs; reconcile must not enqueue update messages when nothing is installed yet.
+        $messageBus->expects($this->never())->method('dispatch');
+
+        $serviceInstaller->reconcile(Context::createDefaultContext());
     }
 
     /**

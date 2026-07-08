@@ -75,6 +75,19 @@ class LifecycleManager
         $this->removeOrphanedServices($services, $context);
     }
 
+    /**
+     * Periodic (level-triggered) counterpart to the update push (ServiceController::triggerUpdate): install new
+     * services and converge installed ones to the registry's best revision. No orphan removal — that stays in sync().
+     */
+    public function reconcile(Context $context): void
+    {
+        if (!$this->enabled()) {
+            return;
+        }
+
+        $this->serviceInstaller->reconcile($context);
+    }
+
     public function syncState(string $service, Context $context): void
     {
         $criteria = new Criteria();
