@@ -140,7 +140,7 @@ class SalesChannelRepositoryIterator
             }
         }
 
-        if ($result->getIds() === []) {
+        if ($result->getEntities()->getIds() === []) {
             return null;
         }
 
