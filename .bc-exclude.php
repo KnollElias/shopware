@@ -32,6 +32,9 @@ return [
         // Expected to be appended when a new event is added
         preg_quote('Value of constant Shopware\Core\Framework\Webhook\Hookable', '/'),
 
+        // Additive: appended when a new request criteria parameter is supported (e.g. exclude-fields)
+        preg_quote('Value of constant Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder::KNOWN_FIELDS', '/'),
+
         // Intentional rename of the technical-term analyzer chain so the public
         // identifier matches how the chain is referenced everywhere else
         // (constants, `buildTextFieldConfig(technicalTerms: true)`, the
