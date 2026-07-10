@@ -10,6 +10,10 @@ Cloning any entity that carries a `wasModifiedByUser` field previously always fa
 
 Editing or deleting a product cross-selling entry, including assigned products and translations, now correctly invalidates the product detail route cache and prevents stale storefront results.
 
+### Product import/export skips the heavy description column the profile does not map
+
+Product exports now drop the heavy translated `description` column from the read (via `Criteria::excludeFields()`) when the export profile's column mapping does not reference it — reducing database load, transfer size and memory for large catalogs. The exclusion is applied to both the product read and the `translations` association (when it is loaded), and only when `description` is referenced nowhere in the mapping. A `EnrichExportCriteriaEvent` listener that already narrows the field selection is left untouched.
+
 ### Enforce "Allow payment change after checkout" when re-paying an order
 
 `Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute` now rejects payment methods whose `afterOrderEnabled` ("Allow payment change after checkout") flag is disabled, matching the methods offered on the edit-order page. Previously the flag was only applied as a UI filter, so a payment method that renders its own JavaScript payment button (e.g. PayPal smart buttons) could still be used to pay an existing order. The store-api route `POST /store-api/order/payment` now returns `CHECKOUT__ORDER_PAYMENT_METHOD_NOT_CHANGEABLE` (HTTP 403) for such methods. (shopware/shopware#17495)
