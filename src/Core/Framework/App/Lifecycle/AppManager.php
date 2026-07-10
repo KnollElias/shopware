@@ -278,7 +278,7 @@ class AppManager
         $this->updateCustomEntities($app, $manifest);
 
         $this->permissionLifecycle->updatePrivileges(
-            $manifest->getPermissions(),
+            $manifest,
             $id,
             $manifest->validatesPermissions() === false && $parameters->acceptPermissions,
             $context

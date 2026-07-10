@@ -8,6 +8,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\Lifecycle\PermissionLifecycleService;
+use Shopware\Core\Framework\App\Manifest\Manifest;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\Gateways;
 use Shopware\Core\Framework\App\Manifest\Xml\Permission\Permissions;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Context;
@@ -38,13 +41,13 @@ class PermissionLifecycleServiceTest extends TestCase
         $appId = Uuid::randomHex();
         $context = Context::createDefaultContext();
 
-        $permissions = Permissions::fromArray(['permissions' => ['customer' => ['read', 'update']]]);
+        $manifest = $this->manifestWithPermissions(['customer' => ['read', 'update']]);
 
         $this->permissions->expects($this->once())
             ->method('setPrivileges')
             ->with($appId, ['customer:read', 'customer:update'], $context);
 
-        $this->service->updatePrivileges($permissions, $appId, true, $context);
+        $this->service->updatePrivileges($manifest, $appId, true, $context);
     }
 
     public function testUpdatePrivilegesDoesNotAutoAcceptIfFlagIsNotSpecified(): void
@@ -52,12 +55,44 @@ class PermissionLifecycleServiceTest extends TestCase
         $appId = Uuid::randomHex();
         $context = Context::createDefaultContext();
 
-        $permissions = Permissions::fromArray(['permissions' => ['customer' => ['read', 'update']]]);
+        $manifest = $this->manifestWithPermissions(['customer' => ['read', 'update']]);
 
         $this->permissions->expects($this->once())
             ->method('requestPrivileges')
             ->with($appId, ['customer:read', 'customer:update'], $context);
 
-        $this->service->updatePrivileges($permissions, $appId, false, Context::createDefaultContext());
+        $this->service->updatePrivileges($manifest, $appId, false, Context::createDefaultContext());
+    }
+
+    public function testUpdatePrivilegesAddsImpliedCapabilityPrivileges(): void
+    {
+        $appId = Uuid::randomHex();
+        $context = Context::createDefaultContext();
+
+        $checkout = static::createStub(CheckoutGateway::class);
+        $gateways = static::createStub(Gateways::class);
+        $gateways->method('getCheckout')->willReturn($checkout);
+
+        $manifest = $this->manifestWithPermissions(['customer' => ['read']], $gateways);
+
+        $this->permissions->expects($this->once())
+            ->method('requestPrivileges')
+            ->with($appId, ['customer:read', 'checkout_gateway'], $context);
+
+        $this->service->updatePrivileges($manifest, $appId, false, $context);
+    }
+
+    /**
+     * @param array<string, list<string>> $permissions
+     */
+    private function manifestWithPermissions(array $permissions, ?Gateways $gateways = null): Manifest&Stub
+    {
+        $manifest = static::createStub(Manifest::class);
+        $manifest->method('getPermissions')->willReturn(Permissions::fromArray(['permissions' => $permissions]));
+        $manifest->method('getTax')->willReturn(null);
+        $manifest->method('getPayments')->willReturn(null);
+        $manifest->method('getGateways')->willReturn($gateways);
+
+        return $manifest;
     }
 }

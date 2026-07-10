@@ -200,6 +200,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\TaxProvider\TaxAdjustment"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\TaxProvider\TaxProviderRegistry"/>
             <argument type="service" id="Shopware\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapabilityAccess"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\TaxProvider\TaxProviderRegistry" public="true">

@@ -17,6 +17,8 @@ use Shopware\Core\Framework\App\ActiveAppsLoader;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayload;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayloadService;
+use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
+use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -44,7 +46,8 @@ class AppCheckoutGateway implements CheckoutGatewayInterface
         private readonly EntityRepository $appRepository,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ExceptionLogger $logger,
-        private readonly ActiveAppsLoader $activeAppsLoader
+        private readonly ActiveAppsLoader $activeAppsLoader,
+        private readonly AppCapabilityAccess $capabilityAccess
     ) {
     }
 
@@ -60,6 +63,11 @@ class AppCheckoutGateway implements CheckoutGatewayInterface
         $apps = $this->getActiveAppsWithCheckoutGateway($context->getContext());
 
         foreach ($apps as $app) {
+            // do not push cart/customer data to an app that has not been granted the checkout gateway permission
+            if (!$this->capabilityAccess->isGranted($app->getId(), AppCapabilityPermission::CHECKOUT_GATEWAY)) {
+                continue;
+            }
+
             $checkoutGatewayUrl = $app->getCheckoutGatewayUrl();
             \assert(\is_string($checkoutGatewayUrl));
             $appResponse = $this->payloadService->request($checkoutGatewayUrl, $appPayload, $app);
