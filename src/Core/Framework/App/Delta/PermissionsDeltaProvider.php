@@ -4,7 +4,6 @@ namespace Shopware\Core\Framework\App\Delta;
 
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\App\Manifest\Manifest;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\App\Privileges\Utils;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Store\Struct\PermissionCollection;
@@ -63,6 +62,6 @@ class PermissionsDeltaProvider extends AbstractAppDeltaProvider
         $permissions = $manifest->getPermissions();
         $privileges = $permissions ? $permissions->asParsedPrivileges() : [];
 
-        return array_values(array_unique([...$privileges, ...AppCapabilityPermission::impliedPrivileges($manifest)]));
+        return array_values(array_unique([...$privileges, ...$manifest->getImpliedPrivileges()]));
     }
 }

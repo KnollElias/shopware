@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\App\Manifest\Manifest;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Log\Package;
@@ -32,7 +31,7 @@ class PermissionLifecycleService
     {
         $permissions = $manifest->getPermissions();
         $privileges = $permissions ? $permissions->asParsedPrivileges() : [];
-        $privileges = array_values(array_unique([...$privileges, ...AppCapabilityPermission::impliedPrivileges($manifest)]));
+        $privileges = array_values(array_unique([...$privileges, ...$manifest->getImpliedPrivileges()]));
 
         if ($acceptPermissions) {
             $this->privileges->setPrivileges($appId, $privileges, $context);

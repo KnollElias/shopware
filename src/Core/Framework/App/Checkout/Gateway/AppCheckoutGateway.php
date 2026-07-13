@@ -17,8 +17,8 @@ use Shopware\Core\Framework\App\ActiveAppsLoader;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayload;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayloadService;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
 use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -64,7 +64,7 @@ class AppCheckoutGateway implements CheckoutGatewayInterface
 
         foreach ($apps as $app) {
             // do not push cart/customer data to an app that has not been granted the checkout gateway permission
-            if (!$this->capabilityAccess->isGranted($app->getId(), AppCapabilityPermission::CHECKOUT_GATEWAY)) {
+            if (!$this->capabilityAccess->isGranted($app->getId(), CheckoutGateway::PERMISSION)) {
                 continue;
             }
 

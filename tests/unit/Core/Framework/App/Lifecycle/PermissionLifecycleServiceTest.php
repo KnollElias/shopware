@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\Lifecycle\PermissionLifecycleService;
 use Shopware\Core\Framework\App\Manifest\Manifest;
 use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
-use Shopware\Core\Framework\App\Manifest\Xml\Gateway\Gateways;
 use Shopware\Core\Framework\App\Manifest\Xml\Permission\Permissions;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Context;
@@ -69,11 +68,7 @@ class PermissionLifecycleServiceTest extends TestCase
         $appId = Uuid::randomHex();
         $context = Context::createDefaultContext();
 
-        $checkout = static::createStub(CheckoutGateway::class);
-        $gateways = static::createStub(Gateways::class);
-        $gateways->method('getCheckout')->willReturn($checkout);
-
-        $manifest = $this->manifestWithPermissions(['customer' => ['read']], $gateways);
+        $manifest = $this->manifestWithPermissions(['customer' => ['read']], [CheckoutGateway::PERMISSION]);
 
         $this->permissions->expects($this->once())
             ->method('requestPrivileges')
@@ -84,14 +79,13 @@ class PermissionLifecycleServiceTest extends TestCase
 
     /**
      * @param array<string, list<string>> $permissions
+     * @param list<string> $impliedPrivileges
      */
-    private function manifestWithPermissions(array $permissions, ?Gateways $gateways = null): Manifest&Stub
+    private function manifestWithPermissions(array $permissions, array $impliedPrivileges = []): Manifest&Stub
     {
         $manifest = static::createStub(Manifest::class);
         $manifest->method('getPermissions')->willReturn(Permissions::fromArray(['permissions' => $permissions]));
-        $manifest->method('getTax')->willReturn(null);
-        $manifest->method('getPayments')->willReturn(null);
-        $manifest->method('getGateways')->willReturn($gateways);
+        $manifest->method('getImpliedPrivileges')->willReturn($impliedPrivileges);
 
         return $manifest;
     }

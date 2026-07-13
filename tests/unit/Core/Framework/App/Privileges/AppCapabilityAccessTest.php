@@ -4,8 +4,9 @@ namespace Shopware\Tests\Unit\Core\Framework\App\Privileges;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
+use Shopware\Core\Framework\App\Manifest\Xml\Tax\Tax;
 use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Uuid\Uuid;
 
@@ -24,7 +25,7 @@ class AppCapabilityAccessTest extends TestCase
 
         $access = new AppCapabilityAccess($privileges);
 
-        static::assertTrue($access->isGranted($appId, AppCapabilityPermission::PAYMENT));
+        static::assertTrue($access->isGranted($appId, Payments::PERMISSION));
     }
 
     public function testIsGrantedReturnsFalseWhenMarkerMissing(): void
@@ -36,7 +37,7 @@ class AppCapabilityAccessTest extends TestCase
 
         $access = new AppCapabilityAccess($privileges);
 
-        static::assertFalse($access->isGranted($appId, AppCapabilityPermission::PAYMENT));
+        static::assertFalse($access->isGranted($appId, Payments::PERMISSION));
     }
 
     public function testIsGrantedReturnsFalseWhenAppUnknown(): void
@@ -48,6 +49,6 @@ class AppCapabilityAccessTest extends TestCase
 
         $access = new AppCapabilityAccess($privileges);
 
-        static::assertFalse($access->isGranted($appId, AppCapabilityPermission::TAX_PROVIDER));
+        static::assertFalse($access->isGranted($appId, Tax::PERMISSION));
     }
 }

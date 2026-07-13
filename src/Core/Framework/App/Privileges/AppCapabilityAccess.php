@@ -19,10 +19,10 @@ class AppCapabilityAccess
     {
     }
 
-    public function isGranted(string $appId, AppCapabilityPermission $capability): bool
+    public function isGranted(string $appId, string $privilege): bool
     {
         $granted = $this->privileges->getPrivileges([$appId])[$appId] ?? [];
 
-        return \in_array($capability->value, $granted, true);
+        return \in_array($privilege, $granted, true);
     }
 }

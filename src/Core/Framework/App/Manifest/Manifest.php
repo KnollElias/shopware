@@ -8,6 +8,7 @@ use Shopware\Core\Framework\App\Exception\AppXmlParsingException;
 use Shopware\Core\Framework\App\Manifest\Xml\Administration\Admin;
 use Shopware\Core\Framework\App\Manifest\Xml\AllowedHost\AllowedHosts;
 use Shopware\Core\Framework\App\Manifest\Xml\Cookie\Cookies;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
 use Shopware\Core\Framework\App\Manifest\Xml\Gateway\Gateways;
 use Shopware\Core\Framework\App\Manifest\Xml\Meta\Metadata;
 use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
@@ -142,6 +143,32 @@ class Manifest
     public function getPermissions(): ?Permissions
     {
         return $this->permissions;
+    }
+
+    /**
+     * Privileges implied by the capabilities the app declares (tax provider, payment method,
+     * checkout gateway). They are appended to the app's requested privileges like the <crud>
+     * shorthand, so a handler only receives cart/order/customer data once its permission is granted.
+     *
+     * @return list<string>
+     */
+    public function getImpliedPrivileges(): array
+    {
+        $privileges = [];
+
+        if ($this->payments?->getPaymentMethods()) {
+            $privileges[] = Payments::PERMISSION;
+        }
+
+        if ($this->tax?->getTaxProviders()) {
+            $privileges[] = Tax::PERMISSION;
+        }
+
+        if ($this->gateways?->getCheckout()) {
+            $privileges[] = CheckoutGateway::PERMISSION;
+        }
+
+        return $privileges;
     }
 
     public function getAllowedHosts(): ?AllowedHosts

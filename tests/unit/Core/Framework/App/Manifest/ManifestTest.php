@@ -3,11 +3,15 @@
 namespace Shopware\Tests\Unit\Core\Framework\App\Manifest;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\AppException;
 use Shopware\Core\Framework\App\Exception\AppXmlParsingException;
 use Shopware\Core\Framework\App\Manifest\Manifest;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
+use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
 use Shopware\Core\Framework\App\Manifest\Xml\ShippingMethod\ShippingMethods;
+use Shopware\Core\Framework\App\Manifest\Xml\Tax\Tax;
 
 /**
  * @internal
@@ -20,6 +24,35 @@ class ManifestTest extends TestCase
         $manifest = Manifest::createFromXmlFile(__DIR__ . '/_fixtures/test/manifest.xml');
 
         static::assertSame(__DIR__ . '/_fixtures/test', $manifest->getPath());
+    }
+
+    /**
+     * @param list<string> $expected
+     */
+    #[DataProvider('impliedPrivilegesProvider')]
+    public function testGetImpliedPrivileges(string $fixture, array $expected): void
+    {
+        $manifest = Manifest::createFromXmlFile($fixture);
+
+        static::assertSame($expected, $manifest->getImpliedPrivileges());
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: list<string>}>
+     */
+    public static function impliedPrivilegesProvider(): iterable
+    {
+        // declares <payments> and <tax>, but no checkout gateway
+        yield 'payment and tax' => [
+            __DIR__ . '/_fixtures/test/manifest.xml',
+            [Payments::PERMISSION, Tax::PERMISSION],
+        ];
+
+        // declares a checkout gateway, but no payments or tax
+        yield 'checkout gateway' => [
+            __DIR__ . '/Xml/Gateways/_fixtures/testGateway/manifest.xml',
+            [CheckoutGateway::PERMISSION],
+        ];
     }
 
     public function testCreateFromXml(): void

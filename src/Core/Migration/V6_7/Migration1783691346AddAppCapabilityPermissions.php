@@ -4,7 +4,9 @@ namespace Shopware\Core\Migration\V6_7;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
+use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
+use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
+use Shopware\Core\Framework\App\Manifest\Xml\Tax\Tax;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -88,15 +90,15 @@ class Migration1783691346AddAppCapabilityPermissions extends MigrationStep
         $map = [];
 
         foreach ($connection->fetchFirstColumn('SELECT DISTINCT LOWER(HEX(app_id)) FROM tax_provider WHERE app_id IS NOT NULL') as $id) {
-            $map[$id][] = AppCapabilityPermission::TAX_PROVIDER->value;
+            $map[$id][] = Tax::PERMISSION;
         }
 
         foreach ($connection->fetchFirstColumn('SELECT DISTINCT LOWER(HEX(app_id)) FROM app_payment_method WHERE app_id IS NOT NULL') as $id) {
-            $map[$id][] = AppCapabilityPermission::PAYMENT->value;
+            $map[$id][] = Payments::PERMISSION;
         }
 
         foreach ($connection->fetchFirstColumn('SELECT LOWER(HEX(id)) FROM app WHERE checkout_gateway_url IS NOT NULL') as $id) {
-            $map[$id][] = AppCapabilityPermission::CHECKOUT_GATEWAY->value;
+            $map[$id][] = CheckoutGateway::PERMISSION;
         }
 
         return $map;

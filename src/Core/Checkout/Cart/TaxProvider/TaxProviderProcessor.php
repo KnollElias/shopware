@@ -8,8 +8,8 @@ use Shopware\Core\Checkout\Cart\Exception\TaxProviderExceptions;
 use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\TaxProvider\Struct\TaxProviderResult;
 use Shopware\Core\Framework\App\AppEntity;
+use Shopware\Core\Framework\App\Manifest\Xml\Tax\Tax;
 use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityPermission;
 use Shopware\Core\Framework\App\TaxProvider\Payload\TaxProviderPayload;
 use Shopware\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -110,7 +110,7 @@ class TaxProviderProcessor
             // app providers
             if ($providerEntity->getApp() && $providerEntity->getProcessUrl()) {
                 // do not push cart/customer data to an app that has not been granted the tax provider permission
-                if (!$this->capabilityAccess->isGranted($providerEntity->getApp()->getId(), AppCapabilityPermission::TAX_PROVIDER)) {
+                if (!$this->capabilityAccess->isGranted($providerEntity->getApp()->getId(), Tax::PERMISSION)) {
                     continue;
                 }
 
