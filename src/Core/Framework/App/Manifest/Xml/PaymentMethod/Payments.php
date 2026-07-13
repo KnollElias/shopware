@@ -11,7 +11,7 @@ use Shopware\Core\Framework\Log\Package;
 #[Package('framework')]
 class Payments extends XmlElement
 {
-    final public const PERMISSION = 'payment';
+    final public const PERMISSION = 'process_payments';
 
     /**
      * @var list<PaymentMethod>

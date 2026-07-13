@@ -22,7 +22,7 @@ use Shopware\Core\Framework\App\Checkout\Gateway\AppCheckoutGateway;
 use Shopware\Core\Framework\App\Checkout\Gateway\AppCheckoutGatewayResponse;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayload;
 use Shopware\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayloadService;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
+use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -58,7 +58,7 @@ class AppCheckoutGatewayTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(ExceptionLogger::class),
             static::createStub(ActiveAppsLoader::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $gateway->process(new CheckoutGatewayPayloadStruct(new Cart('hatoken'), Generator::generateSalesChannelContext(), new PaymentMethodCollection(), new ShippingMethodCollection()));
@@ -139,8 +139,8 @@ class AppCheckoutGatewayTest extends TestCase
         $loader = static::createStub(ActiveAppsLoader::class);
         $loader->method('getActiveApps')->willReturn([$app]);
 
-        $capabilityAccess = static::createStub(AppCapabilityAccess::class);
-        $capabilityAccess->method('isGranted')->willReturn(true);
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('can')->willReturn(true);
 
         $gateway = new AppCheckoutGateway(
             $payloadService,
@@ -183,8 +183,8 @@ class AppCheckoutGatewayTest extends TestCase
         $loader = static::createStub(ActiveAppsLoader::class);
         $loader->method('getActiveApps')->willReturn([$app]);
 
-        $capabilityAccess = static::createStub(AppCapabilityAccess::class);
-        $capabilityAccess->method('isGranted')->willReturn(false);
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('can')->willReturn(false);
 
         $gateway = new AppCheckoutGateway(
             $payloadService,

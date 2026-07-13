@@ -237,7 +237,7 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Framework\Log\ExceptionLogger"/>
             <argument type="service" id="Shopware\Core\Framework\App\ActiveAppsLoader"/>
-            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapabilityAccess"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapability"/>
         </service>
 
         <service id="Shopware\Core\Framework\App\Context\Gateway\AppContextGateway">
@@ -261,7 +261,7 @@
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="app.repository"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapabilityAccess"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapability"/>
             <tag name="shopware.payment.method"/>
         </service>
 
@@ -731,7 +731,7 @@
 
         </service>
 
-        <service id="Shopware\Core\Framework\App\Privileges\AppCapabilityAccess">
+        <service id="Shopware\Core\Framework\App\Privileges\AppCapability">
             <argument type="service" id="Shopware\Core\Framework\App\Privileges\Privileges"/>
         </service>
 

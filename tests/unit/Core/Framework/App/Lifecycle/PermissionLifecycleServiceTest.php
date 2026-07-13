@@ -72,7 +72,7 @@ class PermissionLifecycleServiceTest extends TestCase
 
         $this->permissions->expects($this->once())
             ->method('requestPrivileges')
-            ->with($appId, ['customer:read', 'checkout_gateway'], $context);
+            ->with($appId, ['customer:read', CheckoutGateway::PERMISSION], $context);
 
         $this->service->updatePrivileges($manifest, $appId, false, $context);
     }

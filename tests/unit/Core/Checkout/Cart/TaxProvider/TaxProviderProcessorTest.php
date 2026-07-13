@@ -29,7 +29,7 @@ use Shopware\Core\Checkout\Cart\TaxProvider\TaxProviderProcessor;
 use Shopware\Core\Checkout\Cart\TaxProvider\TaxProviderRegistry;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\App\AppEntity;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
+use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\App\TaxProvider\Payload\TaxProviderPayload;
 use Shopware\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService;
 use Shopware\Core\Framework\Context;
@@ -112,7 +112,7 @@ class TaxProviderProcessorTest extends TestCase
             $this->adjustment,
             $taxProviderRegistry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $processor->process($cart, $salesChannelContext);
@@ -207,7 +207,7 @@ class TaxProviderProcessorTest extends TestCase
             $adjustment,
             $taxProviderRegistry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $processor->process($cart, $salesChannelContext);
@@ -261,7 +261,7 @@ class TaxProviderProcessorTest extends TestCase
             $this->adjustment,
             $registry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $processor->process($cart, $salesChannelContext);
@@ -312,7 +312,7 @@ class TaxProviderProcessorTest extends TestCase
             $this->adjustment,
             $taxProviderRegistry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $expected = new TaxProviderExceptions();
@@ -354,7 +354,7 @@ class TaxProviderProcessorTest extends TestCase
             $taxAdjuster,
             $registry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $processor->process($cart, $salesChannelContext);
@@ -412,7 +412,7 @@ class TaxProviderProcessorTest extends TestCase
             static::createStub(TaxAdjustment::class),
             $registry,
             static::createStub(TaxProviderPayloadService::class),
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $this->expectException(TaxProviderExceptions::class);
@@ -472,8 +472,8 @@ class TaxProviderProcessorTest extends TestCase
             )
             ->willReturn(new TaxProviderResult([$this->ids->get('line-item-1') => $taxes]));
 
-        $capabilityAccess = static::createStub(AppCapabilityAccess::class);
-        $capabilityAccess->method('isGranted')->willReturn(true);
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('can')->willReturn(true);
 
         $processor = new TaxProviderProcessor(
             $repo,
@@ -520,8 +520,8 @@ class TaxProviderProcessorTest extends TestCase
         $payloadService = $this->createMock(TaxProviderPayloadService::class);
         $payloadService->expects($this->never())->method('request');
 
-        $capabilityAccess = static::createStub(AppCapabilityAccess::class);
-        $capabilityAccess->method('isGranted')->willReturn(false);
+        $capabilityAccess = static::createStub(AppCapability::class);
+        $capabilityAccess->method('can')->willReturn(false);
 
         $processor = new TaxProviderProcessor(
             $repo,
@@ -568,7 +568,7 @@ class TaxProviderProcessorTest extends TestCase
             $taxAdjuster,
             $registry,
             $payloadService,
-            static::createStub(AppCapabilityAccess::class)
+            static::createStub(AppCapability::class)
         );
 
         $cart = new Cart('foo');

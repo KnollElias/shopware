@@ -6,49 +6,43 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
 use Shopware\Core\Framework\App\Manifest\Xml\Tax\Tax;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
+use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
  * @internal
  */
-#[CoversClass(AppCapabilityAccess::class)]
-class AppCapabilityAccessTest extends TestCase
+#[CoversClass(AppCapability::class)]
+class AppCapabilityTest extends TestCase
 {
-    public function testIsGrantedReturnsTrueWhenMarkerPresent(): void
+    public function testCanReturnsTrueWhenActionGranted(): void
     {
         $appId = Uuid::randomHex();
 
         $privileges = static::createStub(Privileges::class);
-        $privileges->method('getPrivileges')->willReturn([$appId => ['customer:read', 'payment']]);
+        $privileges->method('getPrivileges')->willReturn([$appId => ['customer:read', Payments::PERMISSION]]);
 
-        $access = new AppCapabilityAccess($privileges);
-
-        static::assertTrue($access->isGranted($appId, Payments::PERMISSION));
+        static::assertTrue((new AppCapability($privileges))->can($appId, Payments::PERMISSION));
     }
 
-    public function testIsGrantedReturnsFalseWhenMarkerMissing(): void
+    public function testCanReturnsFalseWhenActionNotGranted(): void
     {
         $appId = Uuid::randomHex();
 
         $privileges = static::createStub(Privileges::class);
         $privileges->method('getPrivileges')->willReturn([$appId => ['customer:read']]);
 
-        $access = new AppCapabilityAccess($privileges);
-
-        static::assertFalse($access->isGranted($appId, Payments::PERMISSION));
+        static::assertFalse((new AppCapability($privileges))->can($appId, Payments::PERMISSION));
     }
 
-    public function testIsGrantedReturnsFalseWhenAppUnknown(): void
+    public function testCanReturnsFalseWhenAppUnknown(): void
     {
         $appId = Uuid::randomHex();
 
         $privileges = static::createStub(Privileges::class);
         $privileges->method('getPrivileges')->willReturn([]);
 
-        $access = new AppCapabilityAccess($privileges);
-
-        static::assertFalse($access->isGranted($appId, Tax::PERMISSION));
+        static::assertFalse((new AppCapability($privileges))->can($appId, Tax::PERMISSION));
     }
 }

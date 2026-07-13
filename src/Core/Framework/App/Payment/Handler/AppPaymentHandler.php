@@ -31,7 +31,7 @@ use Shopware\Core\Framework\App\Payment\Response\AbstractResponse;
 use Shopware\Core\Framework\App\Payment\Response\PaymentResponse;
 use Shopware\Core\Framework\App\Payment\Response\RefundResponse;
 use Shopware\Core\Framework\App\Payment\Response\ValidateResponse;
-use Shopware\Core\Framework\App\Privileges\AppCapabilityAccess;
+use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -66,7 +66,7 @@ class AppPaymentHandler extends AbstractPaymentHandler
         private readonly EntityRepository $orderTransactionRepository,
         private readonly EntityRepository $appRepository,
         private readonly Connection $connection,
-        private readonly AppCapabilityAccess $capabilityAccess,
+        private readonly AppCapability $appCapability,
     ) {
     }
 
@@ -228,7 +228,7 @@ class AppPaymentHandler extends AbstractPaymentHandler
         Context $context
     ): AbstractResponse {
         // do not push order/customer data to an app that has not been granted the payment permission
-        if (!$this->capabilityAccess->isGranted($app->getId(), Payments::PERMISSION)) {
+        if (!$this->appCapability->can($app->getId(), Payments::PERMISSION)) {
             throw AppException::interrupted(\sprintf('App "%s" has not been granted the payment permission', $app->getName()));
         }
 

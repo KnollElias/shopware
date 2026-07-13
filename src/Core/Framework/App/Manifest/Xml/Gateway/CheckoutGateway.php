@@ -10,5 +10,5 @@ use Shopware\Core\Framework\Log\Package;
 #[Package('checkout')]
 class CheckoutGateway extends AbstractGateway
 {
-    final public const PERMISSION = 'checkout_gateway';
+    final public const PERMISSION = 'process_checkout';
 }
