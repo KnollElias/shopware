@@ -4,6 +4,7 @@ namespace Shopware\Tests\Unit\Core\Content\ProductExport\Service;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Category\CategoryDefinition;
@@ -634,6 +635,73 @@ class ProductExportGeneratorTest extends TestCase
 
         static::assertNotNull($result);
         static::assertSame('', $result->getContent());
+    }
+
+    /**
+     * @param list<string> $templateVariables
+     * @param list<string> $expectedExcluded
+     */
+    #[DataProvider('descriptionExclusionProvider')]
+    public function testExcludesDescriptionWhenNotReferencedInTemplate(array $templateVariables, array $expectedExcluded): void
+    {
+        $productExport = $this->getProductExportEntity();
+        $productExport->setEncoding(ProductExportEntity::ENCODING_UTF8);
+        $productExport->setFileFormat(ProductExportEntity::FILE_FORMAT_JSONL);
+
+        $context = $this->createSalesChannelContext();
+        $product = $this->createProduct('product-id');
+
+        $this->salesChannelContextService->method('get')->willReturn($context);
+        $this->languageLocaleProvider->method('getLocaleForLanguageId')->willReturn('en-GB');
+
+        $twigVariableParser = static::createStub(TwigVariableParser::class);
+        $twigVariableParser->method('parse')->willReturn($templateVariables);
+        $this->parserFactory->method('getParser')->willReturn($twigVariableParser);
+
+        $captured = null;
+        $this->productRepository->method('searchIds')
+            ->willReturnCallback(function (Criteria $criteria) use (&$captured, $context): IdSearchResult {
+                // excludeDescriptionIfUnused() runs before the iterator, so the first criteria already carries it
+                $captured ??= $criteria;
+
+                return IdSearchResult::fromIds(['product-id'], $criteria, $context->getContext());
+            });
+        // The iterator stops on an empty search result, so return the product once, then empty.
+        $this->productRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->createProductSearchResult($product, $context),
+            $this->createEmptyProductSearchResult($context)
+        );
+        $this->productExportRender->method('renderBody')->willReturn('{"row":1}');
+        $this->seoUrlPlaceholderHandler->method('replace')->willReturnArgument(0);
+        $this->productExportValidator->method('validate')->willReturn([]);
+
+        $this->createGenerator()->generate($productExport, new ExportBehavior(false, false, false, false, false));
+
+        static::assertInstanceOf(Criteria::class, $captured);
+        static::assertSame($expectedExcluded, $captured->getExcludedFields());
+    }
+
+    /**
+     * @return iterable<string, array{list<string>, list<string>}>
+     */
+    public static function descriptionExclusionProvider(): iterable
+    {
+        yield 'description not referenced -> excluded' => [
+            ['product.id', 'product.translated.name', 'product.calculatedPrice'],
+            ['description'],
+        ];
+        yield 'description referenced -> kept' => [
+            ['product.translated.description', 'product.id'],
+            [],
+        ];
+        yield 'whole translated array dereferenced -> kept' => [
+            ['product.translated'],
+            [],
+        ];
+        yield 'whole product dereferenced -> kept' => [
+            ['product'],
+            [],
+        ];
     }
 
     private function createGenerator(): ProductExportGenerator
