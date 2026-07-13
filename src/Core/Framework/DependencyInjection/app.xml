@@ -734,6 +734,12 @@
             <argument type="service" id="Shopware\Core\Framework\App\Privileges\Privileges"/>
         </service>
 
+        <service id="Shopware\Core\Framework\App\Payment\AppPaymentMethodCriteriaSubscriber">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapability"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
         <service id="Shopware\Core\Framework\App\Api\AppPrivilegeController" public="true">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\App\Privileges\Privileges"/>
