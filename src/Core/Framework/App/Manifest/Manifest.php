@@ -145,32 +145,6 @@ class Manifest
         return $this->permissions;
     }
 
-    /**
-     * Privileges implied by the capabilities the app declares (tax provider, payment method,
-     * checkout gateway). They are appended to the app's requested privileges like the <crud>
-     * shorthand, so a handler only receives cart/order/customer data once its permission is granted.
-     *
-     * @return list<string>
-     */
-    public function getImpliedPrivileges(): array
-    {
-        $privileges = [];
-
-        if ($this->payments?->getPaymentMethods()) {
-            $privileges[] = Payments::PERMISSION;
-        }
-
-        if ($this->tax?->getTaxProviders()) {
-            $privileges[] = Tax::PERMISSION;
-        }
-
-        if ($this->gateways?->getCheckout()) {
-            $privileges[] = CheckoutGateway::PERMISSION;
-        }
-
-        return $privileges;
-    }
-
     public function getAllowedHosts(): ?AllowedHosts
     {
         return $this->allowedHosts;
@@ -346,6 +320,25 @@ class Manifest
             $gateways = $gateways === null ? null : Gateways::fromXml($gateways);
         } catch (\Exception $e) {
             throw AppException::xmlParsingException($xmlFile, $e->getMessage());
+        }
+
+        // A declared tax provider, payment method or checkout gateway implicitly requires the matching
+        // permission, so Shopware only pushes cart/order/customer data to the handler once it is granted.
+        // Adding it to the permissions here means it flows through the normal request/consent path.
+        $capabilityPrivileges = [];
+        if ($payments?->getPaymentMethods()) {
+            $capabilityPrivileges[] = Payments::PERMISSION;
+        }
+        if ($tax?->getTaxProviders()) {
+            $capabilityPrivileges[] = Tax::PERMISSION;
+        }
+        if ($gateways?->getCheckout()) {
+            $capabilityPrivileges[] = CheckoutGateway::PERMISSION;
+        }
+
+        if ($capabilityPrivileges !== []) {
+            $permissions ??= Permissions::fromArray(['permissions' => []]);
+            $permissions->addPrivileges($capabilityPrivileges);
         }
 
         return new self(

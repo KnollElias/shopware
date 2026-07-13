@@ -21,7 +21,6 @@ use Shopware\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodEntit
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\App\AppException;
-use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
 use Shopware\Core\Framework\App\Payload\SourcedPayloadInterface;
 use Shopware\Core\Framework\App\Payment\Payload\PaymentPayloadService;
 use Shopware\Core\Framework\App\Payment\Payload\Struct\PaymentPayload;
@@ -31,7 +30,6 @@ use Shopware\Core\Framework\App\Payment\Response\AbstractResponse;
 use Shopware\Core\Framework\App\Payment\Response\PaymentResponse;
 use Shopware\Core\Framework\App\Payment\Response\RefundResponse;
 use Shopware\Core\Framework\App\Payment\Response\ValidateResponse;
-use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -66,7 +64,6 @@ class AppPaymentHandler extends AbstractPaymentHandler
         private readonly EntityRepository $orderTransactionRepository,
         private readonly EntityRepository $appRepository,
         private readonly Connection $connection,
-        private readonly AppCapability $appCapability,
     ) {
     }
 
@@ -227,11 +224,6 @@ class AppPaymentHandler extends AbstractPaymentHandler
         AppEntity $app,
         Context $context
     ): AbstractResponse {
-        // do not push order/customer data to an app that has not been granted the payment permission
-        if (!$this->appCapability->can($app->getId(), Payments::PERMISSION)) {
-            throw AppException::interrupted(\sprintf('App "%s" has not been granted the payment permission', $app->getName()));
-        }
-
         $response = $this->payloadService->request($url, $payload, $app, $responseClass, $context);
 
         if ($response->getErrorMessage()) {

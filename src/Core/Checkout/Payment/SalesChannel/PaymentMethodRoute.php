@@ -5,7 +5,10 @@ namespace Shopware\Core\Checkout\Payment\SalesChannel;
 use Shopware\Core\Checkout\Payment\Hook\PaymentMethodRouteHook;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodDefinition;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopware\Core\Framework\App\Manifest\Xml\PaymentMethod\Payments;
+use Shopware\Core\Framework\App\Privileges\AppCapability;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -36,6 +39,7 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ScriptExecutor $scriptExecutor,
         private readonly RuleIdMatcher $ruleIdMatcher,
+        private readonly AppCapability $appCapability,
     ) {
     }
 
@@ -66,11 +70,21 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         $criteria
             ->addFilter(new EqualsFilter('active', true))
             ->addSorting(new FieldSorting('position'))
-            ->addAssociation('media');
+            ->addAssociation('media')
+            ->addAssociation('appPaymentMethod');
 
         $result = $this->paymentMethodRepository->search($criteria, $context);
 
         $paymentMethods = $result->getEntities();
+
+        // Hide an app's payment method until the app has been granted the payment permission,
+        // so a not-yet-consented app is never offered and never receives order/customer data.
+        $paymentMethods = $paymentMethods->filter(function (PaymentMethodEntity $paymentMethod): bool {
+            $appId = $paymentMethod->getAppPaymentMethod()?->getAppId();
+
+            return $appId === null || $this->appCapability->can($appId, Payments::PERMISSION);
+        });
+
         $paymentMethods->sortPaymentMethodsByPreference($context);
 
         if ($request->query->getBoolean('onlyAvailable') || $request->request->getBoolean('onlyAvailable')) {

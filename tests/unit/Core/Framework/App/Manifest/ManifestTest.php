@@ -29,18 +29,22 @@ class ManifestTest extends TestCase
     /**
      * @param list<string> $expected
      */
-    #[DataProvider('impliedPrivilegesProvider')]
-    public function testGetImpliedPrivileges(string $fixture, array $expected): void
+    #[DataProvider('capabilityPrivilegesProvider')]
+    public function testCapabilityPrivilegesAreAddedToPermissions(string $fixture, array $expected): void
     {
         $manifest = Manifest::createFromXmlFile($fixture);
 
-        static::assertSame($expected, $manifest->getImpliedPrivileges());
+        $privileges = $manifest->getPermissions()?->asParsedPrivileges() ?? [];
+
+        foreach ($expected as $privilege) {
+            static::assertContains($privilege, $privileges);
+        }
     }
 
     /**
      * @return iterable<string, array{0: string, 1: list<string>}>
      */
-    public static function impliedPrivilegesProvider(): iterable
+    public static function capabilityPrivilegesProvider(): iterable
     {
         // declares <payments> and <tax>, but no checkout gateway
         yield 'payment and tax' => [
@@ -48,7 +52,7 @@ class ManifestTest extends TestCase
             [Payments::PERMISSION, Tax::PERMISSION],
         ];
 
-        // declares a checkout gateway, but no payments or tax
+        // declares a checkout gateway (and no <permissions> block), but no payments or tax
         yield 'checkout gateway' => [
             __DIR__ . '/Xml/Gateways/_fixtures/testGateway/manifest.xml',
             [CheckoutGateway::PERMISSION],

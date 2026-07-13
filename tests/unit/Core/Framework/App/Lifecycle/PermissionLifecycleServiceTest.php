@@ -8,8 +8,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\Lifecycle\PermissionLifecycleService;
-use Shopware\Core\Framework\App\Manifest\Manifest;
-use Shopware\Core\Framework\App\Manifest\Xml\Gateway\CheckoutGateway;
 use Shopware\Core\Framework\App\Manifest\Xml\Permission\Permissions;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Context;
@@ -40,13 +38,13 @@ class PermissionLifecycleServiceTest extends TestCase
         $appId = Uuid::randomHex();
         $context = Context::createDefaultContext();
 
-        $manifest = $this->manifestWithPermissions(['customer' => ['read', 'update']]);
+        $permissions = Permissions::fromArray(['permissions' => ['customer' => ['read', 'update']]]);
 
         $this->permissions->expects($this->once())
             ->method('setPrivileges')
             ->with($appId, ['customer:read', 'customer:update'], $context);
 
-        $this->service->updatePrivileges($manifest, $appId, true, $context);
+        $this->service->updatePrivileges($permissions, $appId, true, $context);
     }
 
     public function testUpdatePrivilegesDoesNotAutoAcceptIfFlagIsNotSpecified(): void
@@ -54,39 +52,12 @@ class PermissionLifecycleServiceTest extends TestCase
         $appId = Uuid::randomHex();
         $context = Context::createDefaultContext();
 
-        $manifest = $this->manifestWithPermissions(['customer' => ['read', 'update']]);
+        $permissions = Permissions::fromArray(['permissions' => ['customer' => ['read', 'update']]]);
 
         $this->permissions->expects($this->once())
             ->method('requestPrivileges')
             ->with($appId, ['customer:read', 'customer:update'], $context);
 
-        $this->service->updatePrivileges($manifest, $appId, false, Context::createDefaultContext());
-    }
-
-    public function testUpdatePrivilegesAddsImpliedCapabilityPrivileges(): void
-    {
-        $appId = Uuid::randomHex();
-        $context = Context::createDefaultContext();
-
-        $manifest = $this->manifestWithPermissions(['customer' => ['read']], [CheckoutGateway::PERMISSION]);
-
-        $this->permissions->expects($this->once())
-            ->method('requestPrivileges')
-            ->with($appId, ['customer:read', CheckoutGateway::PERMISSION], $context);
-
-        $this->service->updatePrivileges($manifest, $appId, false, $context);
-    }
-
-    /**
-     * @param array<string, list<string>> $permissions
-     * @param list<string> $impliedPrivileges
-     */
-    private function manifestWithPermissions(array $permissions, array $impliedPrivileges = []): Manifest&Stub
-    {
-        $manifest = static::createStub(Manifest::class);
-        $manifest->method('getPermissions')->willReturn(Permissions::fromArray(['permissions' => $permissions]));
-        $manifest->method('getImpliedPrivileges')->willReturn($impliedPrivileges);
-
-        return $manifest;
+        $this->service->updatePrivileges($permissions, $appId, false, Context::createDefaultContext());
     }
 }

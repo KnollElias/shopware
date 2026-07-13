@@ -26,20 +26,20 @@ class PermissionsDeltaProvider extends AbstractAppDeltaProvider
      */
     public function getReport(Manifest $manifest, AppEntity $app): array
     {
-        $privileges = $this->privilegesFromManifest($manifest);
+        $permissions = $manifest->getPermissions();
 
-        if ($privileges === []) {
+        if (!$permissions) {
             return [];
         }
 
-        return Utils::makeCategorizedPermissions($privileges);
+        return Utils::makeCategorizedPermissions($permissions->asParsedPrivileges());
     }
 
     public function hasDelta(Manifest $manifest, AppEntity $app): bool
     {
-        $newPrivileges = $this->privilegesFromManifest($manifest);
+        $permissions = $manifest->getPermissions();
 
-        if ($newPrivileges === []) {
+        if (!$permissions) {
             return false;
         }
 
@@ -49,19 +49,11 @@ class PermissionsDeltaProvider extends AbstractAppDeltaProvider
             return true;
         }
 
-        $privilegesDelta = array_diff($newPrivileges, $aclRole->getPrivileges());
+        $newPrivileges = $permissions->asParsedPrivileges();
+        $currentPrivileges = $aclRole->getPrivileges();
+
+        $privilegesDelta = array_diff($newPrivileges, $currentPrivileges);
 
         return $privilegesDelta !== [];
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function privilegesFromManifest(Manifest $manifest): array
-    {
-        $permissions = $manifest->getPermissions();
-        $privileges = $permissions ? $permissions->asParsedPrivileges() : [];
-
-        return array_values(array_unique([...$privileges, ...$manifest->getImpliedPrivileges()]));
     }
 }

@@ -5,7 +5,7 @@ namespace Shopware\Core\Framework\App\Lifecycle;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\App\Manifest\Manifest;
+use Shopware\Core\Framework\App\Manifest\Xml\Permission\Permissions;
 use Shopware\Core\Framework\App\Privileges\Privileges;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Log\Package;
@@ -27,11 +27,9 @@ class PermissionLifecycleService
     /**
      * @internal only for use by the app-system
      */
-    public function updatePrivileges(Manifest $manifest, string $appId, bool $acceptPermissions, Context $context): void
+    public function updatePrivileges(?Permissions $permissions, string $appId, bool $acceptPermissions, Context $context): void
     {
-        $permissions = $manifest->getPermissions();
         $privileges = $permissions ? $permissions->asParsedPrivileges() : [];
-        $privileges = array_values(array_unique([...$privileges, ...$manifest->getImpliedPrivileges()]));
 
         if ($acceptPermissions) {
             $this->privileges->setPrivileges($appId, $privileges, $context);

@@ -167,6 +167,7 @@
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTagCollector"/>
             <argument type="service" id="Shopware\Core\Framework\Script\Execution\ScriptExecutor"/>
             <argument type="service" id="Shopware\Core\Framework\Rule\RuleIdMatcher"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Privileges\AppCapability"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute" public="true">
