@@ -11,6 +11,16 @@
       "columnActive": "Active",
       "columnLocaleName": "Locale",
       "columnIsoCode": "ISO Code ",
+      "columnSalesChannels": "Sales Channels",
+      "columnSnippetStatus": "Snippet status",
+      "salesChannelCount": "{count} Sales Channel | {count} Sales Channels",
+      "salesChannelNone": "None assigned",
+      "snippetStatus": {
+        "upToDate": "Up to date",
+        "updateAvailable": "Update available",
+        "custom": "Custom"
+      },
+      "buttonUpdateAllSnippets": "Update all snippets",
       "columnInherit": "Inherit from",
       "columnDefault": "Default",
       "defaultLabel": "Default",

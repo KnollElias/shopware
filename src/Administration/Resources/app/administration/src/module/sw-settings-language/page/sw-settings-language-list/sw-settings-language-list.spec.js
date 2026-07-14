@@ -268,4 +268,61 @@ describe('module/sw-settings-language/page/sw-settings-language-list', () => {
         expect(snippetLink.exists()).toBe(true);
         expect(snippetLink.text()).toContain('manageSnippets');
     });
+
+    it('should load the salesChannels association', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.listingCriteria).toEqual(
+            expect.objectContaining({
+                associations: expect.arrayContaining([
+                    expect.objectContaining({
+                        association: 'salesChannels',
+                    }),
+                ]),
+            }),
+        );
+    });
+
+    it('should render the sales channels and snippet status columns', async () => {
+        const wrapper = await createWrapper();
+
+        const columns = wrapper.vm.getColumns.map((column) => column.property);
+
+        expect(columns).toContain('salesChannels');
+        expect(columns).toContain('snippetStatus');
+    });
+
+    it('should render an update all snippets button', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        const updateButton = wrapper.find('.sw-settings-language-list__button-update-snippets');
+
+        expect(updateButton.exists()).toBe(true);
+    });
+
+    it('should label the assigned sales channels by count', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.salesChannelLabel({ salesChannels: [] })).toContain('salesChannelNone');
+        expect(wrapper.vm.salesChannelLabel({})).toContain('salesChannelNone');
+        expect(
+            wrapper.vm.salesChannelLabel({
+                salesChannels: [
+                    {},
+                    {},
+                    {},
+                ],
+            }),
+        ).toContain('salesChannelCount');
+    });
+
+    it('should derive a stable snippet status for each language', async () => {
+        const wrapper = await createWrapper();
+
+        const status = wrapper.vm.getSnippetStatus({ id: 'abc123' });
+
+        expect(Object.keys(wrapper.vm.snippetStatusConfig)).toContain(status);
+        expect(wrapper.vm.getSnippetStatus({ id: 'abc123' })).toBe(status);
+    });
 });

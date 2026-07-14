@@ -11,6 +11,16 @@
       "columnActive": "Aktiv",
       "columnLocaleName": "Lokalisierung",
       "columnIsoCode": "ISO-Code ",
+      "columnSalesChannels": "Verkaufskanäle",
+      "columnSnippetStatus": "Textbaustein-Status",
+      "salesChannelCount": "{count} Verkaufskanal | {count} Verkaufskanäle",
+      "salesChannelNone": "Nicht zugewiesen",
+      "snippetStatus": {
+        "upToDate": "Aktuell",
+        "updateAvailable": "Update verfügbar",
+        "custom": "Angepasst"
+      },
+      "buttonUpdateAllSnippets": "Alle Textbausteine aktualisieren",
       "columnInherit": "Erbt von",
       "columnDefault": "Standard",
       "defaultLabel": "Standard",

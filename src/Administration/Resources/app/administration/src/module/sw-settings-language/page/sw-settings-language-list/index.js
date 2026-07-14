@@ -51,6 +51,7 @@ export default {
             const criteria = new Criteria(this.page, this.limit);
             criteria.addAssociation('locale');
             criteria.addAssociation('translationCode');
+            criteria.addAssociation('salesChannels');
 
             if (this.sortBy) {
                 criteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection));
@@ -89,6 +90,16 @@ export default {
                     label: 'sw-settings-language.list.columnIsoCode',
                 },
                 {
+                    property: 'salesChannels',
+                    label: 'sw-settings-language.list.columnSalesChannels',
+                    sortable: false,
+                },
+                {
+                    property: 'snippetStatus',
+                    label: 'sw-settings-language.list.columnSnippetStatus',
+                    sortable: false,
+                },
+                {
                     property: 'active',
                     dataIndex: 'active',
                     label: 'sw-settings-language.list.columnActive',
@@ -120,6 +131,26 @@ export default {
 
         cardTitle() {
             return `${this.$t('sw-settings-language.list.cardTitle')} (${this.total})`;
+        },
+
+        snippetStatusConfig() {
+            return {
+                upToDate: {
+                    variant: 'positive',
+                    statusIndicator: true,
+                    label: 'sw-settings-language.list.snippetStatus.upToDate',
+                },
+                updateAvailable: {
+                    variant: 'info',
+                    statusIndicator: true,
+                    label: 'sw-settings-language.list.snippetStatus.updateAvailable',
+                },
+                custom: {
+                    variant: 'neutral',
+                    statusIndicator: false,
+                    label: 'sw-settings-language.list.snippetStatus.custom',
+                },
+            };
         },
     },
 
@@ -157,6 +188,33 @@ export default {
                     this.isLoading = false;
                 });
             });
+        },
+
+        salesChannelLabel(item) {
+            const count = item.salesChannels?.length ?? 0;
+
+            if (count === 0) {
+                return this.$t('sw-settings-language.list.salesChannelNone');
+            }
+
+            return this.$t('sw-settings-language.list.salesChannelCount', count);
+        },
+
+        /**
+         * Placeholder until the snippet-status backend exists. Derives a stable
+         * pseudo status from the language id so all badge states are visible.
+         */
+        getSnippetStatus(item) {
+            const statuses = Object.keys(this.snippetStatusConfig);
+            const seed = String(item.id ?? item.name ?? '')
+                .split('')
+                .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+            return statuses[seed % statuses.length];
+        },
+
+        onUpdateAllSnippets() {
+            // Placeholder: snippet update flow pending backend implementation.
         },
 
         getParentName(item) {
