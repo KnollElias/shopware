@@ -399,6 +399,10 @@ GENERATE_SOURCEMAPS=true NODE_ENV=production composer build:js:storefront
 
 ## Administration
 
+### App action buttons in the Media Manager multiselect sidebar
+
+Apps can now surface a custom action button when multiple media are selected in the Media Manager. Registering an action button via the Admin SDK with `entity: 'media'` and `view: 'list'` renders it in the multiselect sidebar's quick-actions list. The button is only shown when **every** selected media item matches the configured `fileTypes` (case-insensitive; omit `fileTypes` to always show it), and the `callback` receives the full list of selected media entities (`{ id, url, fileName, mimeType, fileSize }`). This complements the existing single-item button (`view: 'item'`) and lets apps offer bulk operations — e.g. exporting or converting all selected files — without an extra API round-trip. No changes are required for existing single-item action buttons.
+
 ### Reworked search behaviour options
 
 The "Search behaviour" card in `Settings > Search` presents the search mode as "Broad search (OR)" and "Exact search (AND)" with short one-line descriptions, replacing the previous "OR"/"AND" labels with example texts. The broad option is now listed first; the stored configuration (`product_search_config.andLogic`) and the template blocks are unchanged. Extensions that override the mode selection (e.g. Advanced Search) can swap the offered options based on their own configuration.
