@@ -3,7 +3,8 @@
 // Preview branch (ci/phpunit-12-preview-always): every default/nightly integration shard carries
 // phpunit=12 and runs on PHP 8.3+, so the phpunit job force-installs PHPUnit 12 and runs non-blocking
 // (continue-on-error). The $major arm is left untouched — it feeds integration-major.yml, not this preview.
-$nightly = $_SERVER['argv'][1] ?? false;
+// argv[1] is the run profile: '' (PR), 'nightly' or 'release'. Only nightly widens the matrix.
+$nightly = ($_SERVER['argv'][1] ?? '') === 'nightly';
 $major = filter_var($_SERVER['argv'][2] ?? false, \FILTER_VALIDATE_BOOLEAN);
 
 // Integration shards: the paths + framework batches together cover the whole tests/integration tree.
