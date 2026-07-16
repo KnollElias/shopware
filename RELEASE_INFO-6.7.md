@@ -2,6 +2,10 @@
 
 ## Core
 
+### Product `descriptionTeaser` backfill runs once as a post-update indexer
+
+The `product.description_teaser.indexer` that fills `descriptionTeaser` for products predating the column (introduced in 6.7.12) is now a one-time post-update indexer: it runs once through the post-update flow after the update and is no longer executed by `bin/console dal:refresh:index`. It rebuilds each teaser from the current description and rewrites only the rows whose stored value is missing or out of date. Ongoing changes continue to be kept in sync synchronously on write by the product description-teaser subscriber.
+
 ### Per-thumbnail post-processing event and progressive JPEG thumbnails
 
 Thumbnail generation gained a new extension point and two output improvements:
