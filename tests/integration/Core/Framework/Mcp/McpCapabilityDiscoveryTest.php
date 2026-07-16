@@ -172,7 +172,6 @@ class McpCapabilityDiscoveryTest extends TestCase
 
     public function testEnablingToolsetDeliversToolsListChangedNotification(): void
     {
-        Feature::skipTestIfInActive('MCP_SERVER', $this);
 
         $browser = $this->getBrowser();
 
