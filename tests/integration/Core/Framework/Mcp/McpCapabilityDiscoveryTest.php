@@ -172,7 +172,6 @@ class McpCapabilityDiscoveryTest extends TestCase
 
     public function testEnablingToolsetDeliversToolsListChangedNotification(): void
     {
-
         $browser = $this->getBrowser();
 
         $browser->request(
