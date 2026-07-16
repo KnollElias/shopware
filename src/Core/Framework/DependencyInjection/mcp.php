@@ -187,6 +187,7 @@ return static function (ContainerConfigurator $container): void {
             service('logger'),
             service(McpAllowlistFilter::class),
             service(McpSessionRegistry::class),
+            service(McpListChangedNotifier::class),
         ])
         ->tag('controller.service_arguments')
         ->tag('monolog.logger', ['channel' => 'mcp']);
@@ -337,7 +338,6 @@ return static function (ContainerConfigurator $container): void {
             service('scheduled_task.repository'),
             service('logger'),
             service(McpToolsetSessionStorage::class),
-            service(ClockInterface::class),
             service('mcp.session.store')->nullOnInvalid(),
         ])
         ->tag('messenger.message_handler');
@@ -481,7 +481,6 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(McpToolsetRegistry::class),
             service(McpToolsetSessionStorage::class),
-            service(McpListChangedNotifier::class),
             service('request_stack'),
         ])
         ->tag('mcp.tool');
