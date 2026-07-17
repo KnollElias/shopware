@@ -14,7 +14,8 @@
             "tabContent": "Content",
             "tabAutomation": "Automation",
             "tabPlugins": "Extensions",
-            "textSettingRenameBanner": "The setting <b>Scale units</b> has been renamed to <b>Product units</b>.",
+            "textSettingRenameBanner": "The <b>Scale units</b> settings have been renamed to <b>Product units</b>.",
+            "textLanguageMovedBanner": "The <b>Languages</b> settings have been moved from <b>General</b> to <b>Localisation</b>.",
             "search": {
                 "placeholder": "Find settings...",
                 "noResultsHeadline": "No entries found",

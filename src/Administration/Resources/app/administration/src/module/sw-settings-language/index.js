@@ -52,7 +52,7 @@ Module.register('sw-settings-language', {
     },
 
     settingsItem: {
-        group: 'general',
+        group: 'localization',
         to: 'sw.settings.language.index',
         icon: 'regular-flag',
         privilege: 'language.viewer',

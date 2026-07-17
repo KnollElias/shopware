@@ -15,6 +15,7 @@
       "tabAutomation": "Automatisierung",
       "tabPlugins": "Erweiterungen",
       "textSettingRenameBanner": "Die Einstellung <b>Maßeinheiten</b> wurde in <b>Produkteinheiten</b> umbenannt.",
+      "textLanguageMovedBanner": "Die Einstellung <b>Sprachen</b> wurde von <b>Allgemein</b> nach <b>Regional</b> verschoben.",
       "search": {
         "placeholder": "Finde Einstellungen ...",
         "noResultsHeadline": "Keine Ergebnisse gefunden",

@@ -47,6 +47,19 @@ export default Shopware.Component.wrapComponentConfig({
     },
 
     computed: {
+        changeNotices(): { key: string; version: string }[] {
+            return [
+                {
+                    key: 'sw-settings.index.textSettingRenameBanner',
+                    version: 'v6.8.0.0',
+                },
+                {
+                    key: 'sw-settings.index.textLanguageMovedBanner',
+                    version: 'v6.8.0.0',
+                },
+            ];
+        },
+
         settingsGroups() {
             // Helpers
             const labelOfSetting = (setting: SettingsItemHere) =>

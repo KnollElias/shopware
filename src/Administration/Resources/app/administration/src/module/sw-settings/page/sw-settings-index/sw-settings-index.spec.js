@@ -142,6 +142,7 @@ async function createWrapper(
                         template: '<a><slot></slot></a>',
                     },
                     'sw-extension-component-section': true,
+                    'sw-dismissible-notices': true,
                 },
                 provide: {
                     acl: {
@@ -441,6 +442,21 @@ describe('module/sw-settings/page/sw-settings-index', () => {
                 value: true,
             },
         });
+    });
+
+    it('provides the change notices with the version they can be removed with', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.vm.changeNotices).toEqual([
+            {
+                key: 'sw-settings.index.textSettingRenameBanner',
+                version: 'v6.8.0.0',
+            },
+            {
+                key: 'sw-settings.index.textLanguageMovedBanner',
+                version: 'v6.8.0.0',
+            },
+        ]);
     });
 
     describe('search functionality', () => {
